@@ -55,14 +55,16 @@ final class CarbEntryViewModel: ObservableObject {
     var aiAssistedMetadata: AIAssistedCarbEntryMetadata?
     private var originalAICarbsQuantity: Double?
     private var originalAIFoodType: String?
+    private var originalAIAbsorptionTime: TimeInterval?
 
     /// Returns true if the user modified the AI-suggested values before submission
     var aiValuesWereModified: Bool {
         guard let originalCarbs = originalAICarbsQuantity,
-              let originalFood = originalAIFoodType else {
+              let originalFood = originalAIFoodType,
+              let originalAbsorption = originalAIAbsorptionTime else {
             return false
         }
-        return carbsQuantity != originalCarbs || foodType != originalFood
+        return carbsQuantity != originalCarbs || foodType != originalFood || absorptionTime != originalAbsorption
     }
 
     let shouldBeginEditingQuantity: Bool
@@ -354,20 +356,33 @@ final class CarbEntryViewModel: ObservableObject {
             let response = try await OpenAIService.shared.estimateCarbs(from: imageData)
 
             await MainActor.run {
+                // Convert AI absorption category to TimeInterval
+                let aiAbsorptionTimeInterval: TimeInterval = .hours(response.absorptionTime.typicalHours)
+
                 // Store original AI values for later comparison
                 originalAICarbsQuantity = response.estimatedCarbs
                 originalAIFoodType = response.foodDescription
+                originalAIAbsorptionTime = aiAbsorptionTimeInterval
 
                 // Pre-fill the form fields
                 carbsQuantity = response.estimatedCarbs
                 foodType = response.foodDescription
                 usesCustomFoodType = true
 
+                // Set absorption time from AI recommendation
+                absorptionEditIsProgrammatic = true
+                absorptionTime = aiAbsorptionTimeInterval
+                absorptionTimeWasEdited = true
+
                 // Store metadata for logging
                 aiAssistedMetadata = AIAssistedCarbEntryMetadata(
                     detailedDescription: response.detailedDescription,
                     estimatedCarbs: response.estimatedCarbs,
-                    confidence: response.confidence,
+                    emoji: response.emoji,
+                    absorptionTime: response.absorptionTime,
+                    carbConfidence: response.carbConfidence,
+                    absorptionConfidence: response.absorptionConfidence,
+                    emojiConfidence: response.emojiConfidence,
                     userModified: false
                 )
 

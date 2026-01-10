@@ -421,7 +421,9 @@ final class BolusEntryViewModel: ObservableObject {
                         amount: carbAmount,
                         aiEstimatedAmount: aiMetadata.estimatedCarbs,
                         userModified: aiMetadata.userModified,
-                        confidence: aiMetadata.confidence
+                        carbConfidence: aiMetadata.carbConfidence,
+                        absorptionConfidence: aiMetadata.absorptionConfidence,
+                        emojiConfidence: aiMetadata.emojiConfidence
                     )
                 } else {
                     self.analyticsServicesManager?.didAddCarbs(source: "Phone", amount: carbAmount)
