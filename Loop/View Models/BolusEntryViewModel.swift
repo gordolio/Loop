@@ -158,7 +158,10 @@ final class BolusEntryViewModel: ObservableObject {
     private let carbEntryDateFormatter: DateFormatter
 
     var analyticsServicesManager: AnalyticsServicesManager?
-    
+
+    // AI-assisted carb entry metadata for logging
+    var aiAssistedMetadata: AIAssistedCarbEntryMetadata?
+
     // MARK: - Initialization
 
     init(
@@ -171,7 +174,8 @@ final class BolusEntryViewModel: ObservableObject {
         originalCarbEntry: StoredCarbEntry? = nil,
         potentialCarbEntry: NewCarbEntry? = nil,
         selectedCarbAbsorptionTimeEmoji: String? = nil,
-        isManualGlucoseEntryEnabled: Bool = false
+        isManualGlucoseEntryEnabled: Bool = false,
+        aiAssistedMetadata: AIAssistedCarbEntryMetadata? = nil
     ) {
         self.delegate = delegate
         self.now = now
@@ -190,9 +194,10 @@ final class BolusEntryViewModel: ObservableObject {
         self.selectedCarbAbsorptionTimeEmoji = selectedCarbAbsorptionTimeEmoji
         
         self.isManualGlucoseEntryEnabled = isManualGlucoseEntryEnabled
-        
+        self.aiAssistedMetadata = aiAssistedMetadata
+
         self.chartDateInterval = DateInterval(start: Date(timeInterval: .hours(-1), since: now()), duration: .hours(7))
-        
+
         self.dosingDecision.originalCarbEntry = originalCarbEntry
 
         self.updateSettings()
@@ -407,7 +412,20 @@ final class BolusEntryViewModel: ObservableObject {
             }
             if let storedCarbEntry = await saveCarbEntry(carbEntry, replacingEntry: originalCarbEntry) {
                 self.dosingDecision.carbEntry = storedCarbEntry
-                self.analyticsServicesManager?.didAddCarbs(source: "Phone", amount: storedCarbEntry.quantity.doubleValue(for: .gram()))
+                let carbAmount = storedCarbEntry.quantity.doubleValue(for: .gram())
+
+                // Log AI-assisted carb entry if applicable
+                if let aiMetadata = self.aiAssistedMetadata {
+                    self.analyticsServicesManager?.didAddAIAssistedCarbs(
+                        source: "Phone",
+                        amount: carbAmount,
+                        aiEstimatedAmount: aiMetadata.estimatedCarbs,
+                        userModified: aiMetadata.userModified,
+                        confidence: aiMetadata.confidence
+                    )
+                } else {
+                    self.analyticsServicesManager?.didAddCarbs(source: "Phone", amount: carbAmount)
+                }
             } else {
                 self.presentAlert(.carbEntryPersistenceFailure)
                 return false

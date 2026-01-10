@@ -48,7 +48,23 @@ final class CarbEntryViewModel: ObservableObject {
     @Published var warnings: Set<Warning> = []
 
     @Published var bolusViewModel: BolusEntryViewModel?
-    
+
+    // MARK: - AI-Assisted Entry Properties
+    @Published var isAnalyzingFood = false
+    @Published var aiError: String?
+    var aiAssistedMetadata: AIAssistedCarbEntryMetadata?
+    private var originalAICarbsQuantity: Double?
+    private var originalAIFoodType: String?
+
+    /// Returns true if the user modified the AI-suggested values before submission
+    var aiValuesWereModified: Bool {
+        guard let originalCarbs = originalAICarbsQuantity,
+              let originalFood = originalAIFoodType else {
+            return false
+        }
+        return carbsQuantity != originalCarbs || foodType != originalFood
+    }
+
     let shouldBeginEditingQuantity: Bool
     
     @Published var carbsQuantity: Double? = nil
@@ -182,20 +198,28 @@ final class CarbEntryViewModel: ObservableObject {
     }
         
     @MainActor private func setBolusViewModel() {
+        // Prepare AI metadata with userModified flag set based on current values
+        var finalAIMetadata: AIAssistedCarbEntryMetadata? = nil
+        if var metadata = aiAssistedMetadata {
+            metadata.userModified = aiValuesWereModified
+            finalAIMetadata = metadata
+        }
+
         let viewModel = BolusEntryViewModel(
             delegate: delegate,
             screenWidth: UIScreen.main.bounds.width,
             originalCarbEntry: originalCarbEntry,
             potentialCarbEntry: updatedCarbEntry,
-            selectedCarbAbsorptionTimeEmoji: selectedDefaultAbsorptionTimeEmoji
+            selectedCarbAbsorptionTimeEmoji: selectedDefaultAbsorptionTimeEmoji,
+            aiAssistedMetadata: finalAIMetadata
         )
         Task {
             await viewModel.generateRecommendationAndStartObserving()
         }
-        
+
         viewModel.analyticsServicesManager = delegate?.analyticsServicesManager
         bolusViewModel = viewModel
-        
+
         delegate?.analyticsServicesManager.didDisplayBolusScreen()
     }
     
@@ -314,5 +338,51 @@ final class CarbEntryViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    // MARK: - AI-Assisted Food Analysis
+
+    /// Analyzes a food image using AI and pre-fills the carb entry form
+    /// - Parameter imageData: JPEG image data of the food to analyze
+    func analyzeFood(imageData: Data) async {
+        await MainActor.run {
+            isAnalyzingFood = true
+            aiError = nil
+        }
+
+        do {
+            let response = try await OpenAIService.shared.estimateCarbs(from: imageData)
+
+            await MainActor.run {
+                // Store original AI values for later comparison
+                originalAICarbsQuantity = response.estimatedCarbs
+                originalAIFoodType = response.foodDescription
+
+                // Pre-fill the form fields
+                carbsQuantity = response.estimatedCarbs
+                foodType = response.foodDescription
+                usesCustomFoodType = true
+
+                // Store metadata for logging
+                aiAssistedMetadata = AIAssistedCarbEntryMetadata(
+                    detailedDescription: response.detailedDescription,
+                    estimatedCarbs: response.estimatedCarbs,
+                    confidence: response.confidence,
+                    userModified: false
+                )
+
+                isAnalyzingFood = false
+            }
+        } catch {
+            await MainActor.run {
+                aiError = error.localizedDescription
+                isAnalyzingFood = false
+            }
+        }
+    }
+
+    /// Clears the AI error state
+    func clearAIError() {
+        aiError = nil
     }
 }

@@ -5739,6 +5739,9 @@
         }
       }
     },
+    "AI Analysis Error" : {
+      "comment" : "Title for AI analysis error alert"
+    },
     "Alert Management" : {
       "comment" : "Alert Permissions button text\nTitle of alert management screen",
       "localizations" : {
@@ -6936,6 +6939,9 @@
           }
         }
       }
+    },
+    "Analyze Food with AI" : {
+      "comment" : "Button label for AI-assisted food analysis"
     },
     "API Key" : {
       "comment" : "The title of the amplitude API key credential",
@@ -9815,6 +9821,9 @@
           }
         }
       }
+    },
+    "Camera" : {
+      "comment" : "Button to select camera as photo source"
     },
     "Cancel" : {
       "comment" : "Button label for cancel\nCancel button for reset loop alert\nCancel export button title\nThe title of the cancel action in an action sheet",
@@ -26463,6 +26472,9 @@
         }
       }
     },
+    "Network error: %@" : {
+      "comment" : "Network error with description"
+    },
     "New Favorite Food" : {
       "comment" : "Title of new favorite food screen",
       "localizations" : {
@@ -26872,6 +26884,9 @@
           }
         }
       }
+    },
+    "No content returned from AI" : {
+      "comment" : "Error when AI returns empty response"
     },
     "No Maximum Bolus Configured" : {
       "comment" : "Alert title for a missing maximum bolus setting error",
@@ -28227,7 +28242,7 @@
       }
     },
     "OK" : {
-      "comment" : "Alert acknowledgment OK button\nCritical Alert permissions disabled alert button\nDefault action for alert when alert acknowledgment fails\nNotifications permissions disabled alert button\nText for ok action on notification of upcoming TestFlight expiration\nText for ok action on notification of upcoming profile expiration\nThe title of the notification action to acknowledge a device alert",
+      "comment" : "Alert acknowledgment OK button\nButton to dismiss error alert\nCritical Alert permissions disabled alert button\nDefault action for alert when alert acknowledgment fails\nNotifications permissions disabled alert button\nText for ok action on notification of upcoming TestFlight expiration\nText for ok action on notification of upcoming profile expiration\nThe title of the notification action to acknowledge a device alert",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -28488,6 +28503,9 @@
         }
       }
     },
+    "OpenAI API key is not configured" : {
+      "comment" : "Error when OpenAI API key is missing"
+    },
     "Override Presets" : {
       "comment" : "The title text for the override presets",
       "extractionState" : "manual",
@@ -28613,6 +28631,9 @@
           }
         }
       }
+    },
+    "Photo Library" : {
+      "comment" : "Button to select photo library as photo source"
     },
     "Possible Missed Meal" : {
       "comment" : "The notification title for a meal that was possibly not logged in Loop.",
@@ -32882,6 +32903,9 @@
         }
       }
     },
+    "Select Photo Source" : {
+      "comment" : "Title for photo source selection action sheet"
+    },
     "Selecting a favorite food in the carb entry screen automatically fills in the carb quantity, food type, and absorption time fields! Tap the add button below to create your first favorite food!" : {
       "localizations" : {
         "da" : {
@@ -32985,6 +33009,9 @@
           }
         }
       }
+    },
+    "Server returned error (status %d)" : {
+      "comment" : "Server error with status code"
     },
     "Services" : {
       "comment" : "The title of the services section in settings",
@@ -37045,6 +37072,12 @@
           }
         }
       }
+    },
+    "Unable to parse the AI response" : {
+      "comment" : "Error when response parsing fails"
+    },
+    "Unable to process the selected image" : {
+      "comment" : "Error when image data is invalid"
     },
     "Unable To Reach Pump" : {
       "comment" : "Title for alert shown when delivery status is uncertain",

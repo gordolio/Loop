@@ -18,10 +18,16 @@ struct CarbEntryView: View, HorizontalSizeClassOverride {
     @ObservedObject var viewModel: CarbEntryViewModel
         
     @State private var expandedRow: Row?
-    
+
     @State private var showHowAbsorptionTimeWorks = false
     @State private var showAddFavoriteFood = false
-    
+
+    // AI-assisted carb entry state
+    @State private var showPhotoSourcePicker = false
+    @State private var showPhotoPicker = false
+    @State private var photoSourceType: PhotoSourceType = .photoLibrary
+    @State private var selectedImage: UIImage?
+
     private let isNewEntry: Bool
 
     init(viewModel: CarbEntryViewModel) {
@@ -93,15 +99,70 @@ struct CarbEntryView: View, HorizontalSizeClassOverride {
         .sheet(isPresented: $showHowAbsorptionTimeWorks) {
             HowAbsorptionTimeWorksView()
         }
+        .actionSheet(isPresented: $showPhotoSourcePicker) {
+            ActionSheet(
+                title: Text("Select Photo Source", comment: "Title for photo source selection action sheet"),
+                buttons: [
+                    .default(Text("Camera", comment: "Button to select camera as photo source")) {
+                        photoSourceType = .camera
+                        showPhotoPicker = true
+                    },
+                    .default(Text("Photo Library", comment: "Button to select photo library as photo source")) {
+                        photoSourceType = .photoLibrary
+                        showPhotoPicker = true
+                    },
+                    .cancel()
+                ]
+            )
+        }
+        .sheet(isPresented: $showPhotoPicker) {
+            PhotoPickerWrapper(
+                selectedImage: $selectedImage,
+                isPresented: $showPhotoPicker,
+                sourceType: photoSourceType
+            )
+        }
+        .onChange(of: selectedImage) { newImage in
+            if let image = newImage,
+               let imageData = image.compressedForAI() {
+                Task {
+                    await viewModel.analyzeFood(imageData: imageData)
+                }
+                selectedImage = nil
+            }
+        }
+        .alert(
+            Text("AI Analysis Error", comment: "Title for AI analysis error alert"),
+            isPresented: Binding(
+                get: { viewModel.aiError != nil },
+                set: { if !$0 { viewModel.clearAIError() } }
+            ),
+            actions: {
+                Button(NSLocalizedString("OK", comment: "Button to dismiss error alert")) {
+                    viewModel.clearAIError()
+                }
+            },
+            message: {
+                Text(viewModel.aiError ?? "")
+            }
+        )
     }
     
     private var mainCard: some View {
         VStack(spacing: 10) {
+            // AI-assisted carb entry button (experimental feature)
+            if isNewEntry && FeatureFlags.allowExperimentalFeatures {
+                aiAnalysisButton
+                    .padding(.bottom, 4)
+
+                CardSectionDivider()
+            }
+
             let amountConsumedFocused: Binding<Bool> = Binding(get: { expandedRow == .amountConsumed }, set: { expandedRow = $0 ? .amountConsumed : nil })
             let timeFocused: Binding<Bool> = Binding(get: { expandedRow == .time }, set: { expandedRow = $0 ? .time : nil })
             let foodTypeFocused: Binding<Bool> = Binding(get: { expandedRow == .foodType }, set: { expandedRow = $0 ? .foodType : nil })
             let absorptionTimeFocused: Binding<Bool> = Binding(get: { expandedRow == .absorptionTime }, set: { expandedRow = $0 ? .absorptionTime : nil })
-            
+
             CarbQuantityRow(quantity: $viewModel.carbsQuantity, isFocused: amountConsumedFocused, title: NSLocalizedString("Amount Consumed", comment: "Label for carb quantity entry row on carb entry screen"), preferredCarbUnit: viewModel.preferredCarbUnit)
 
             CardSectionDivider()
@@ -293,14 +354,14 @@ extension CarbEntryView {
             Text("Cancel", comment: "Button label for cancel")
         }
     }
-    
+
     private var continueButton: some View {
         Button(action: viewModel.continueToBolus) {
             Text("Continue", comment: "Button label for continue")
         }
         .disabled(viewModel.continueButtonDisabled)
     }
-    
+
     private var continueActionButton: some View {
         Button(action: viewModel.continueToBolus) {
             Text("Continue", comment: "Button label for continue")
@@ -309,7 +370,15 @@ extension CarbEntryView {
         .padding()
         .disabled(viewModel.continueButtonDisabled)
     }
-    
+
+    private var aiAnalysisButton: some View {
+        AnimatedRainbowButton(
+            title: NSLocalizedString("Analyze Food with AI", comment: "Button label for AI-assisted food analysis"),
+            icon: "sparkles",
+            isLoading: viewModel.isAnalyzingFood,
+            action: { showPhotoSourcePicker = true }
+        )
+    }
 }
 
 extension CarbEntryView {

@@ -174,6 +174,19 @@ final class AnalyticsServicesManager {
         logEvent("Carb entry created", withProperties: ["source" : source, "amount": "\(amount)"], outOfSession: inSession)
     }
 
+    func didAddAIAssistedCarbs(source: String, amount: Double, aiEstimatedAmount: Double, userModified: Bool, confidence: String?) {
+        var properties: [AnyHashable: Any] = [
+            "source": source,
+            "amount": "\(amount)",
+            "aiEstimatedAmount": "\(aiEstimatedAmount)",
+            "userModified": userModified
+        ]
+        if let confidence = confidence {
+            properties["aiConfidence"] = confidence
+        }
+        logEvent("AI Carb entry created", withProperties: properties)
+    }
+
     func didRetryBolus() {
         logEvent("Bolus Retry")
     }
