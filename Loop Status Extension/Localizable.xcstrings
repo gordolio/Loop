@@ -560,7 +560,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Glucides actifs"
+            "value" : "Glucides"
           }
         },
         "he" : {
@@ -685,7 +685,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Insuline active"
+            "value" : "Insuline"
           }
         },
         "he" : {
@@ -1271,7 +1271,7 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "IOB %1$@ 单位"
+            "value" : "活性胰岛素 %1$@ U"
           }
         }
       }
