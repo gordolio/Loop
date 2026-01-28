@@ -718,6 +718,17 @@
         }
       }
     },
+    "%@ + %d other(s)" : {
+      "comment" : "Summary showing main food item and count of others (1: main item name, 2: count of other items)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ + %2$d other(s)"
+          }
+        }
+      }
+    },
     "%@ absorbed" : {
       "comment" : "Formats absorbed carb value",
       "localizations" : {
@@ -9843,14 +9854,14 @@
         }
       }
     },
-    "Camera" : {
-      "comment" : "Button to select camera as photo source"
-    },
     "Bottom row" : {
       "comment" : "Live activity Bottom row configuration title"
     },
     "Bottom row configuration" : {
       "comment" : "Title for Bottom row configuration"
+    },
+    "Camera" : {
+      "comment" : "Button to select camera as photo source"
     },
     "Cancel" : {
       "comment" : "Button label for cancel\nButton text to cancel\nCancel button for reset loop alert\nCancel export button title\nThe title of the cancel action in an action sheet",
@@ -26950,6 +26961,9 @@
     },
     "No content returned from AI" : {
       "comment" : "Error when AI returns empty response"
+    },
+    "No items selected" : {
+      "comment" : "Text shown when no food items are selected"
     },
     "No Maximum Bolus Configured" : {
       "comment" : "Alert title for a missing maximum bolus setting error",

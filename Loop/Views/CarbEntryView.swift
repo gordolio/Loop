@@ -27,6 +27,7 @@ struct CarbEntryView: View, HorizontalSizeClassOverride {
     @State private var showPhotoPicker = false
     @State private var photoSourceType: PhotoSourceType = .photoLibrary
     @State private var selectedImage: UIImage?
+    @State private var isFoodItemsExpanded = false
 
     private let isNewEntry: Bool
 
@@ -155,6 +156,19 @@ struct CarbEntryView: View, HorizontalSizeClassOverride {
                 aiAnalysisButton
                     .padding(.bottom, 4)
 
+                // Food items selection (shown after AI analysis)
+                if viewModel.foodItemSelection != nil {
+                    CardSectionDivider()
+
+                    FoodItemsSelectionView(
+                        selection: $viewModel.foodItemSelection,
+                        isExpanded: $isFoodItemsExpanded,
+                        onToggleItem: { itemId in
+                            viewModel.toggleFoodItem(itemId)
+                        }
+                    )
+                }
+
                 CardSectionDivider()
             }
 
@@ -166,15 +180,15 @@ struct CarbEntryView: View, HorizontalSizeClassOverride {
             CarbQuantityRow(quantity: $viewModel.carbsQuantity, isFocused: amountConsumedFocused, title: NSLocalizedString("Amount Consumed", comment: "Label for carb quantity entry row on carb entry screen"), preferredCarbUnit: viewModel.preferredCarbUnit)
 
             CardSectionDivider()
-            
+
             DatePickerRow(date: $viewModel.time, isFocused: timeFocused, minimumDate: viewModel.minimumDate, maximumDate: viewModel.maximumDate)
-            
+
             CardSectionDivider()
-            
+
             FoodTypeRow(foodType: $viewModel.foodType, absorptionTime: $viewModel.absorptionTime, selectedDefaultAbsorptionTimeEmoji: $viewModel.selectedDefaultAbsorptionTimeEmoji, usesCustomFoodType: $viewModel.usesCustomFoodType, absorptionTimeWasEdited: $viewModel.absorptionTimeWasEdited, isFocused: foodTypeFocused, defaultAbsorptionTimes: viewModel.defaultAbsorptionTimes)
-            
+
             CardSectionDivider()
-            
+
             AbsorptionTimePickerRow(absorptionTime: $viewModel.absorptionTime, isFocused: absorptionTimeFocused, validDurationRange: viewModel.absorptionRimesRange, showHowAbsorptionTimeWorks: $showHowAbsorptionTimeWorks)
                 .padding(.bottom, 2)
         }

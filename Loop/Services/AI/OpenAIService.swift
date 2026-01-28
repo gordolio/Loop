@@ -9,6 +9,8 @@
 import Foundation
 import os.log
 
+// MARK: - Error Types
+
 /// Errors that can occur during OpenAI API operations
 enum OpenAIServiceError: LocalizedError {
     case missingAPIKey
@@ -36,8 +38,10 @@ enum OpenAIServiceError: LocalizedError {
     }
 }
 
+// MARK: - Domain Types
+
 /// Absorption time category for carbohydrate absorption
-enum AbsorptionTimeCategory: String, Codable {
+enum AbsorptionTimeCategory: String, Codable, CaseIterable {
     /// Fast absorption (30 min) - Simple sugars, fruits, juices, candy, soft drinks
     case fast = "fast"
 
@@ -61,32 +65,236 @@ enum AbsorptionTimeCategory: String, Codable {
     }
 }
 
-/// Response from OpenAI Vision API containing carb estimate and food description
-struct OpenAICarbEstimateResponse {
-    /// Estimated carbohydrate count in grams
-    let estimatedCarbs: Double
+// MARK: - OpenAI API Request Types (Codable)
 
-    /// Short food description (suitable for form field) - may be emoji-only, emoji+text, or text
-    let foodDescription: String
+/// Root request body for OpenAI Chat Completions API
+struct OpenAIChatRequest: Encodable {
+    let model: String
+    let messages: [OpenAIMessage]
+    let maxTokens: Int
+    let responseFormat: OpenAIResponseFormat?
 
-    /// Emoji representation of the food (1-3 emojis)
+    enum CodingKeys: String, CodingKey {
+        case model
+        case messages
+        case maxTokens = "max_tokens"
+        case responseFormat = "response_format"
+    }
+}
+
+/// A message in the OpenAI chat conversation
+struct OpenAIMessage: Encodable {
+    let role: String
+    let content: [OpenAIMessageContent]
+}
+
+/// Content item within a message (text or image)
+enum OpenAIMessageContent: Encodable {
+    case text(String)
+    case imageUrl(OpenAIImageUrl)
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .text(let text):
+            try container.encode("text", forKey: .type)
+            try container.encode(text, forKey: .text)
+        case .imageUrl(let imageUrl):
+            try container.encode("image_url", forKey: .type)
+            try container.encode(imageUrl, forKey: .imageUrl)
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case text
+        case imageUrl = "image_url"
+    }
+}
+
+/// Image URL content for vision API
+struct OpenAIImageUrl: Encodable {
+    let url: String
+}
+
+/// Response format specification for structured outputs
+struct OpenAIResponseFormat: Encodable {
+    let type: String
+    let jsonSchema: OpenAIJSONSchema
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case jsonSchema = "json_schema"
+    }
+}
+
+/// JSON Schema specification for structured outputs
+struct OpenAIJSONSchema: Encodable {
+    let name: String
+    let strict: Bool
+    let schema: JSONSchemaDefinition
+}
+
+/// JSON Schema definition (supports nested object definitions)
+struct JSONSchemaDefinition: Encodable {
+    let type: String
+    let properties: [String: JSONSchemaProperty]?
+    let required: [String]?
+    let items: JSONSchemaProperty?
+    let additionalProperties: Bool?
+    let `enum`: [String]?
+    let description: String?
+
+    init(
+        type: String,
+        properties: [String: JSONSchemaProperty]? = nil,
+        required: [String]? = nil,
+        items: JSONSchemaProperty? = nil,
+        additionalProperties: Bool? = nil,
+        enum enumValues: [String]? = nil,
+        description: String? = nil
+    ) {
+        self.type = type
+        self.properties = properties
+        self.required = required
+        self.items = items
+        self.additionalProperties = additionalProperties
+        self.enum = enumValues
+        self.description = description
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case type, properties, required, items, additionalProperties
+        case `enum` = "enum"
+        case description
+    }
+}
+
+/// Property definition within a JSON schema
+indirect enum JSONSchemaProperty: Encodable {
+    case string(description: String? = nil)
+    case number(description: String? = nil)
+    case boolean(description: String? = nil)
+    case `enum`(values: [String], description: String? = nil)
+    case array(items: JSONSchemaProperty, description: String? = nil)
+    case object(properties: [String: JSONSchemaProperty], required: [String], description: String? = nil)
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case .string(let description):
+            try container.encode("string", forKey: .type)
+            try container.encodeIfPresent(description, forKey: .description)
+
+        case .number(let description):
+            try container.encode("number", forKey: .type)
+            try container.encodeIfPresent(description, forKey: .description)
+
+        case .boolean(let description):
+            try container.encode("boolean", forKey: .type)
+            try container.encodeIfPresent(description, forKey: .description)
+
+        case .enum(let values, let description):
+            try container.encode("string", forKey: .type)
+            try container.encode(values, forKey: .enumValues)
+            try container.encodeIfPresent(description, forKey: .description)
+
+        case .array(let items, let description):
+            try container.encode("array", forKey: .type)
+            try container.encode(items, forKey: .items)
+            try container.encodeIfPresent(description, forKey: .description)
+
+        case .object(let properties, let required, let description):
+            try container.encode("object", forKey: .type)
+            try container.encode(properties, forKey: .properties)
+            try container.encode(required, forKey: .required)
+            try container.encode(false, forKey: .additionalProperties)
+            try container.encodeIfPresent(description, forKey: .description)
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case description
+        case enumValues = "enum"
+        case items
+        case properties
+        case required
+        case additionalProperties
+    }
+}
+
+// MARK: - OpenAI API Response Types (Codable)
+
+/// Root response from OpenAI Chat Completions API
+struct OpenAIChatResponse: Decodable {
+    let id: String
+    let choices: [OpenAIChoice]
+    let usage: OpenAIUsage?
+}
+
+/// A choice in the API response
+struct OpenAIChoice: Decodable {
+    let index: Int
+    let message: OpenAIResponseMessage
+    let finishReason: String?
+
+    enum CodingKeys: String, CodingKey {
+        case index
+        case message
+        case finishReason = "finish_reason"
+    }
+}
+
+/// Message content in the response
+struct OpenAIResponseMessage: Decodable {
+    let role: String
+    let content: String?
+}
+
+/// Token usage information
+struct OpenAIUsage: Decodable {
+    let promptTokens: Int
+    let completionTokens: Int
+    let totalTokens: Int
+
+    enum CodingKeys: String, CodingKey {
+        case promptTokens = "prompt_tokens"
+        case completionTokens = "completion_tokens"
+        case totalTokens = "total_tokens"
+    }
+}
+
+// MARK: - AI Response Content Types (what we parse from the content field)
+
+/// Response structure for multi-item food analysis (matches our JSON schema)
+struct AIFoodAnalysisResponse: Decodable {
+    let foodItems: [AIFoodItemResponse]
+    let overallConfidence: Double
+}
+
+/// Individual food item in the AI response
+struct AIFoodItemResponse: Decodable {
+    let name: String
+    let carbs: Double
     let emoji: String
+    let absorptionTime: String
+}
 
-    /// Detailed description of what the AI observed
+/// Response from OpenAI Vision API containing carb estimate and food description (legacy single-item)
+struct OpenAICarbEstimateResponse {
+    let estimatedCarbs: Double
+    let foodDescription: String
+    let emoji: String
     let detailedDescription: String
-
-    /// Recommended absorption time category based on food composition
     let absorptionTime: AbsorptionTimeCategory
-
-    /// Confidence level for the carb estimate (0.0-1.0)
     let carbConfidence: Double
-
-    /// Confidence level for the absorption time estimate (0.0-1.0)
     let absorptionConfidence: Double
-
-    /// Confidence level for the emoji selection (0.0-1.0)
     let emojiConfidence: Double
 }
+
+// MARK: - OpenAI Service
 
 /// Service for interacting with OpenAI Vision API to analyze food images
 final class OpenAIService {
@@ -95,6 +303,8 @@ final class OpenAIService {
     private let log = OSLog(subsystem: "com.loopkit.Loop", category: "OpenAIService")
     private let session: URLSession
     private let endpoint = URL(string: "https://api.openai.com/v1/chat/completions")!
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
 
     init(session: URLSession = .shared) {
         self.session = session
@@ -110,6 +320,163 @@ final class OpenAIService {
         }
         return apiKey
     }
+
+    // MARK: - Multi-Item Food Analysis (Structured Outputs)
+
+    /// Analyzes a food image and returns an array of individual food items detected
+    /// Uses OpenAI Structured Outputs to guarantee response format
+    /// - Parameter imageData: JPEG image data of the food to analyze
+    /// - Returns: AIFoodItemsResponse containing all detected food items
+    func estimateCarbsMultiItem(from imageData: Data) async throws -> AIFoodItemsResponse {
+        let apiKey = try getAPIKey()
+        let base64Image = imageData.base64EncodedString()
+
+        os_log("Sending food image for multi-item AI analysis (%d bytes)", log: log, type: .info, imageData.count)
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let prompt = """
+        Analyze this food image for a diabetes insulin dosing app. Identify ALL individual food items visible and estimate carbohydrate content for each.
+
+        ABSORPTION TIME CATEGORIES (assign to each item based on its composition):
+        - "fast" (30 min): Simple sugars, fruits, juices, candy, soft drinks, honey, ice cream
+        - "medium" (3 hours): Starches, bread, rice, pasta, mixed meals, vegetables, sandwiches, tacos
+        - "slow" (5 hours): High-fat/protein foods - pizza, burgers, cheese, bacon, nuts, steak, avocado
+        - "other" (3 hours): Alcoholic beverages, coffee, tea, or items where absorption is variable
+
+        IMPORTANT GUIDELINES:
+        - List EACH distinct food item separately (e.g., for a meal with sandwich, apple, and drink - list all 3)
+        - Include sides, drinks, sauces, and condiments as separate items
+        - For composite items like sandwiches, list as one item but note components in the name
+        - Estimate portion sizes based on visual cues
+        - Choose 1-2 emojis per item that best represent it
+        """
+
+        // Build the request with structured output schema
+        let chatRequest = OpenAIChatRequest(
+            model: "gpt-4o",
+            messages: [
+                OpenAIMessage(
+                    role: "user",
+                    content: [
+                        .text(prompt),
+                        .imageUrl(OpenAIImageUrl(url: "data:image/jpeg;base64,\(base64Image)"))
+                    ]
+                )
+            ],
+            maxTokens: 1000,
+            responseFormat: OpenAIResponseFormat(
+                type: "json_schema",
+                jsonSchema: OpenAIJSONSchema(
+                    name: "food_analysis",
+                    strict: true,
+                    schema: buildFoodAnalysisSchema()
+                )
+            )
+        )
+
+        request.httpBody = try encoder.encode(chatRequest)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw OpenAIServiceError.invalidResponse(statusCode: 0)
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            os_log("OpenAI API error: status %d", log: log, type: .error, httpResponse.statusCode)
+            if let errorBody = String(data: data, encoding: .utf8) {
+                os_log("Error body: %{public}@", log: log, type: .error, errorBody)
+            }
+            throw OpenAIServiceError.invalidResponse(statusCode: httpResponse.statusCode)
+        }
+
+        return try parseMultiItemResponse(data)
+    }
+
+    /// Builds the JSON schema for food analysis structured output
+    private func buildFoodAnalysisSchema() -> JSONSchemaDefinition {
+        let foodItemSchema = JSONSchemaProperty.object(
+            properties: [
+                "name": .string(description: "Concise item description, max 30 chars"),
+                "carbs": .number(description: "Estimated carbohydrates in grams"),
+                "emoji": .string(description: "1-2 food emojis representing the item"),
+                "absorptionTime": .enum(
+                    values: AbsorptionTimeCategory.allCases.map { $0.rawValue },
+                    description: "Absorption speed category"
+                )
+            ],
+            required: ["name", "carbs", "emoji", "absorptionTime"],
+            description: "A single food item detected in the image"
+        )
+
+        return JSONSchemaDefinition(
+            type: "object",
+            properties: [
+                "foodItems": .array(items: foodItemSchema, description: "Array of all food items detected"),
+                "overallConfidence": .number(description: "Overall confidence in the analysis (0.0-1.0)")
+            ],
+            required: ["foodItems", "overallConfidence"],
+            additionalProperties: false
+        )
+    }
+
+    /// Parses the OpenAI API response for multi-item food analysis
+    private func parseMultiItemResponse(_ data: Data) throws -> AIFoodItemsResponse {
+        // First decode the outer OpenAI response structure
+        let chatResponse: OpenAIChatResponse
+        do {
+            chatResponse = try decoder.decode(OpenAIChatResponse.self, from: data)
+        } catch {
+            os_log("Failed to decode OpenAI response: %{public}@", log: log, type: .error, error.localizedDescription)
+            throw OpenAIServiceError.decodingError(error)
+        }
+
+        guard let content = chatResponse.choices.first?.message.content else {
+            throw OpenAIServiceError.noContentInResponse
+        }
+
+        os_log("Received multi-item AI response content: %{public}@", log: log, type: .debug, content)
+
+        // Decode the content JSON (guaranteed to match schema due to structured outputs)
+        guard let contentData = content.data(using: .utf8) else {
+            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid content encoding"]))
+        }
+
+        let analysisResponse: AIFoodAnalysisResponse
+        do {
+            analysisResponse = try decoder.decode(AIFoodAnalysisResponse.self, from: contentData)
+        } catch {
+            os_log("Failed to decode food analysis: %{public}@", log: log, type: .error, error.localizedDescription)
+            throw OpenAIServiceError.decodingError(error)
+        }
+
+        // Convert to our domain model
+        let foodItems = analysisResponse.foodItems.map { item in
+            AIFoodItem(
+                name: item.name,
+                carbs: item.carbs,
+                emoji: item.emoji,
+                absorptionTime: AbsorptionTimeCategory(rawValue: item.absorptionTime) ?? .medium
+            )
+        }
+
+        guard !foodItems.isEmpty else {
+            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 2, userInfo: [NSLocalizedDescriptionKey: "No food items found in response"]))
+        }
+
+        os_log("AI detected %d food items with total %.1f grams of carbs", log: log, type: .info, foodItems.count, foodItems.reduce(0) { $0 + $1.carbs })
+
+        return AIFoodItemsResponse(
+            foodItems: foodItems,
+            overallConfidence: analysisResponse.overallConfidence
+        )
+    }
+
+    // MARK: - Legacy Single-Item Analysis (kept for backwards compatibility)
 
     /// Analyzes a food image and returns estimated carbohydrate content
     /// - Parameter imageData: JPEG image data of the food to analyze
@@ -155,29 +522,22 @@ final class OpenAIService {
         }
         """
 
-        let payload: [String: Any] = [
-            "model": "gpt-4o",
-            "messages": [
-                [
-                    "role": "user",
-                    "content": [
-                        [
-                            "type": "text",
-                            "text": prompt
-                        ],
-                        [
-                            "type": "image_url",
-                            "image_url": [
-                                "url": "data:image/jpeg;base64,\(base64Image)"
-                            ]
-                        ]
+        let chatRequest = OpenAIChatRequest(
+            model: "gpt-4o",
+            messages: [
+                OpenAIMessage(
+                    role: "user",
+                    content: [
+                        .text(prompt),
+                        .imageUrl(OpenAIImageUrl(url: "data:image/jpeg;base64,\(base64Image)"))
                     ]
-                ]
+                )
             ],
-            "max_tokens": 500
-        ]
+            maxTokens: 500,
+            responseFormat: nil  // Legacy mode without structured outputs
+        )
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        request.httpBody = try encoder.encode(chatRequest)
 
         let (data, response) = try await session.data(for: request)
 
@@ -193,60 +553,50 @@ final class OpenAIService {
             throw OpenAIServiceError.invalidResponse(statusCode: httpResponse.statusCode)
         }
 
-        return try parseResponse(data)
+        return try parseLegacyResponse(data)
     }
 
-    /// Parses the OpenAI API response to extract carb estimate
-    private func parseResponse(_ data: Data) throws -> OpenAICarbEstimateResponse {
-        // Parse the OpenAI response structure
-        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let choices = json["choices"] as? [[String: Any]],
-              let firstChoice = choices.first,
-              let message = firstChoice["message"] as? [String: Any],
-              let content = message["content"] as? String else {
+    /// Parses the legacy single-item response
+    private func parseLegacyResponse(_ data: Data) throws -> OpenAICarbEstimateResponse {
+        let chatResponse: OpenAIChatResponse
+        do {
+            chatResponse = try decoder.decode(OpenAIChatResponse.self, from: data)
+        } catch {
+            throw OpenAIServiceError.decodingError(error)
+        }
+
+        guard let content = chatResponse.choices.first?.message.content else {
             throw OpenAIServiceError.noContentInResponse
         }
 
         os_log("Received AI response content: %{public}@", log: log, type: .debug, content)
 
-        // Extract JSON from the content (AI might include markdown code blocks)
+        // Extract JSON from content (may be wrapped in markdown code blocks)
         let jsonString = extractJSON(from: content)
 
-        guard let jsonData = jsonString.data(using: .utf8),
-              let result = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
-            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to parse JSON from response"]))
+        guard let jsonData = jsonString.data(using: .utf8) else {
+            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid content encoding"]))
         }
 
-        guard let estimatedCarbs = result["estimatedCarbs"] as? Double ?? (result["estimatedCarbs"] as? Int).map(Double.init),
-              let foodDescription = result["foodDescription"] as? String,
-              let detailedDescription = result["detailedDescription"] as? String else {
-            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Missing required fields in response"]))
+        // Decode the legacy response structure
+        let result: LegacySingleItemResponse
+        do {
+            result = try decoder.decode(LegacySingleItemResponse.self, from: jsonData)
+        } catch {
+            throw OpenAIServiceError.decodingError(error)
         }
 
-        // Parse emoji (default to empty string if not provided)
-        let emoji = result["emoji"] as? String ?? ""
-
-        // Parse absorption time (default to medium if not provided or invalid)
-        let absorptionTimeString = result["absorptionTime"] as? String ?? "medium"
-        let absorptionTime = AbsorptionTimeCategory(rawValue: absorptionTimeString) ?? .medium
-
-        // Parse confidence values (default to 0.5 if not provided)
-        let carbConfidence = result["carbConfidence"] as? Double ?? 0.5
-        let absorptionConfidence = result["absorptionConfidence"] as? Double ?? 0.5
-        let emojiConfidence = result["emojiConfidence"] as? Double ?? 0.5
-
-        os_log("AI estimated %{public}.1f grams of carbs (confidence: %.2f) for: %{public}@", log: log, type: .info, estimatedCarbs, carbConfidence, foodDescription)
-        os_log("Absorption time: %{public}@ (confidence: %.2f), Emoji: %{public}@ (confidence: %.2f)", log: log, type: .info, absorptionTimeString, absorptionConfidence, emoji, emojiConfidence)
+        os_log("AI estimated %{public}.1f grams of carbs (confidence: %.2f) for: %{public}@", log: log, type: .info, result.estimatedCarbs, result.carbConfidence, result.foodDescription)
 
         return OpenAICarbEstimateResponse(
-            estimatedCarbs: estimatedCarbs,
-            foodDescription: foodDescription,
-            emoji: emoji,
-            detailedDescription: detailedDescription,
-            absorptionTime: absorptionTime,
-            carbConfidence: carbConfidence,
-            absorptionConfidence: absorptionConfidence,
-            emojiConfidence: emojiConfidence
+            estimatedCarbs: result.estimatedCarbs,
+            foodDescription: result.foodDescription,
+            emoji: result.emoji,
+            detailedDescription: result.detailedDescription,
+            absorptionTime: AbsorptionTimeCategory(rawValue: result.absorptionTime) ?? .medium,
+            carbConfidence: result.carbConfidence,
+            absorptionConfidence: result.absorptionConfidence,
+            emojiConfidence: result.emojiConfidence
         )
     }
 
@@ -272,4 +622,18 @@ final class OpenAIService {
 
         return content.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+}
+
+// MARK: - Legacy Response Type
+
+/// Response structure for legacy single-item analysis
+private struct LegacySingleItemResponse: Decodable {
+    let estimatedCarbs: Double
+    let foodDescription: String
+    let emoji: String
+    let detailedDescription: String
+    let absorptionTime: String
+    let carbConfidence: Double
+    let absorptionConfidence: Double
+    let emojiConfidence: Double
 }

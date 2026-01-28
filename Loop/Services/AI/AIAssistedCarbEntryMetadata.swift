@@ -13,7 +13,7 @@ struct AIAssistedCarbEntryMetadata: Codable, Equatable {
     /// Detailed description of the food as analyzed by AI
     let detailedDescription: String
 
-    /// AI's estimated carbohydrate count in grams
+    /// AI's estimated carbohydrate count in grams (total of all detected items)
     let estimatedCarbs: Double
 
     /// Emoji representation of the food (1-3 emojis)
@@ -37,6 +37,12 @@ struct AIAssistedCarbEntryMetadata: Codable, Equatable {
     /// When the AI analysis was performed
     let analyzedAt: Date
 
+    /// Array of individual food items detected (for multi-item analysis)
+    let foodItems: [AIFoodItem]?
+
+    /// IDs of items that were selected by the user (nil means all selected or single-item mode)
+    let selectedItemIds: [UUID]?
+
     init(
         detailedDescription: String,
         estimatedCarbs: Double,
@@ -46,7 +52,9 @@ struct AIAssistedCarbEntryMetadata: Codable, Equatable {
         absorptionConfidence: Double,
         emojiConfidence: Double,
         userModified: Bool = false,
-        analyzedAt: Date = Date()
+        analyzedAt: Date = Date(),
+        foodItems: [AIFoodItem]? = nil,
+        selectedItemIds: [UUID]? = nil
     ) {
         self.detailedDescription = detailedDescription
         self.estimatedCarbs = estimatedCarbs
@@ -57,22 +65,20 @@ struct AIAssistedCarbEntryMetadata: Codable, Equatable {
         self.emojiConfidence = emojiConfidence
         self.userModified = userModified
         self.analyzedAt = analyzedAt
+        self.foodItems = foodItems
+        self.selectedItemIds = selectedItemIds
     }
 
-    /// Returns a dictionary representation suitable for logging to external services
-    var asDictionary: [String: Any] {
-        return [
-            "detailedDescription": detailedDescription,
-            "estimatedCarbs": estimatedCarbs,
-            "emoji": emoji,
-            "absorptionTime": absorptionTime.rawValue,
-            "absorptionTimeHours": absorptionTime.typicalHours,
-            "carbConfidence": carbConfidence,
-            "absorptionConfidence": absorptionConfidence,
-            "emojiConfidence": emojiConfidence,
-            "userModified": userModified,
-            "analyzedAt": ISO8601DateFormatter().string(from: analyzedAt)
-        ]
+    /// Returns JSON data representation suitable for logging to external services
+    var asJSONData: Data? {
+        let loggableData = LoggableMetadata(from: self)
+        return try? JSONEncoder().encode(loggableData)
+    }
+
+    /// Returns JSON string representation suitable for logging
+    var asJSONString: String? {
+        guard let data = asJSONData else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     /// Returns a formatted string suitable for Nightscout notes field
@@ -82,11 +88,89 @@ struct AIAssistedCarbEntryMetadata: Codable, Equatable {
             notes += " \(emoji)"
         }
         notes += " | Est: \(Int(estimatedCarbs))g (conf: \(Int(carbConfidence * 100))%)"
+
+        // Add multi-item breakdown if present
+        if let items = foodItems, items.count > 1 {
+            let itemCount = items.count
+            let selectedCount = selectedItemIds?.count ?? itemCount
+            if selectedCount < itemCount {
+                notes += " | \(selectedCount)/\(itemCount) items selected"
+            } else {
+                notes += " | \(itemCount) items"
+            }
+        }
+
         notes += " | Absorption: \(absorptionTime.rawValue) (conf: \(Int(absorptionConfidence * 100))%)"
         if userModified {
             notes += " | User modified"
         }
         notes += " | \(detailedDescription)"
         return notes
+    }
+}
+
+// MARK: - Loggable Data Structures
+
+/// Codable structure for logging AI metadata to external services
+struct LoggableMetadata: Codable {
+    let detailedDescription: String
+    let estimatedCarbs: Double
+    let emoji: String
+    let absorptionTime: String
+    let absorptionTimeHours: Double
+    let carbConfidence: Double
+    let absorptionConfidence: Double
+    let emojiConfidence: Double
+    let userModified: Bool
+    let analyzedAt: String
+    let foodItemCount: Int?
+    let selectedItemCount: Int?
+    let deselectedItemCount: Int?
+    let foodItems: [LoggableFoodItem]?
+
+    init(from metadata: AIAssistedCarbEntryMetadata) {
+        self.detailedDescription = metadata.detailedDescription
+        self.estimatedCarbs = metadata.estimatedCarbs
+        self.emoji = metadata.emoji
+        self.absorptionTime = metadata.absorptionTime.rawValue
+        self.absorptionTimeHours = metadata.absorptionTime.typicalHours
+        self.carbConfidence = metadata.carbConfidence
+        self.absorptionConfidence = metadata.absorptionConfidence
+        self.emojiConfidence = metadata.emojiConfidence
+        self.userModified = metadata.userModified
+        self.analyzedAt = ISO8601DateFormatter().string(from: metadata.analyzedAt)
+
+        if let items = metadata.foodItems {
+            self.foodItemCount = items.count
+            self.foodItems = items.map { LoggableFoodItem(from: $0) }
+
+            if let selectedIds = metadata.selectedItemIds {
+                self.selectedItemCount = selectedIds.count
+                self.deselectedItemCount = items.count - selectedIds.count
+            } else {
+                self.selectedItemCount = nil
+                self.deselectedItemCount = nil
+            }
+        } else {
+            self.foodItemCount = nil
+            self.selectedItemCount = nil
+            self.deselectedItemCount = nil
+            self.foodItems = nil
+        }
+    }
+}
+
+/// Codable structure for logging individual food items
+struct LoggableFoodItem: Codable {
+    let name: String
+    let carbs: Double
+    let emoji: String
+    let absorptionTime: String
+
+    init(from item: AIFoodItem) {
+        self.name = item.name
+        self.carbs = item.carbs
+        self.emoji = item.emoji ?? ""
+        self.absorptionTime = item.absorptionTime.rawValue
     }
 }

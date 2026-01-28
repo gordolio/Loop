@@ -52,6 +52,7 @@ final class CarbEntryViewModel: ObservableObject {
     // MARK: - AI-Assisted Entry Properties
     @Published var isAnalyzingFood = false
     @Published var aiError: String?
+    @Published var foodItemSelection: FoodItemSelection?
     var aiAssistedMetadata: AIAssistedCarbEntryMetadata?
     private var originalAICarbsQuantity: Double?
     private var originalAIFoodType: String?
@@ -59,6 +60,11 @@ final class CarbEntryViewModel: ObservableObject {
 
     /// Returns true if the user modified the AI-suggested values before submission
     var aiValuesWereModified: Bool {
+        // Check if multi-item selection was modified
+        if let selection = foodItemSelection, selection.userModifiedSelection {
+            return true
+        }
+
         guard let originalCarbs = originalAICarbsQuantity,
               let originalFood = originalAIFoodType,
               let originalAbsorption = originalAIAbsorptionTime else {
@@ -344,47 +350,25 @@ final class CarbEntryViewModel: ObservableObject {
 
     // MARK: - AI-Assisted Food Analysis
 
-    /// Analyzes a food image using AI and pre-fills the carb entry form
+    /// Analyzes a food image using AI and pre-fills the carb entry form with multi-item support
     /// - Parameter imageData: JPEG image data of the food to analyze
     func analyzeFood(imageData: Data) async {
         await MainActor.run {
             isAnalyzingFood = true
             aiError = nil
+            foodItemSelection = nil
         }
 
         do {
-            let response = try await OpenAIService.shared.estimateCarbs(from: imageData)
+            let response = try await OpenAIService.shared.estimateCarbsMultiItem(from: imageData)
 
             await MainActor.run {
-                // Convert AI absorption category to TimeInterval
-                let aiAbsorptionTimeInterval: TimeInterval = .hours(response.absorptionTime.typicalHours)
+                // Create the food item selection with all items selected by default
+                let selection = FoodItemSelection(response: response)
+                foodItemSelection = selection
 
-                // Store original AI values for later comparison
-                originalAICarbsQuantity = response.estimatedCarbs
-                originalAIFoodType = response.foodDescription
-                originalAIAbsorptionTime = aiAbsorptionTimeInterval
-
-                // Pre-fill the form fields
-                carbsQuantity = response.estimatedCarbs
-                foodType = response.foodDescription
-                usesCustomFoodType = true
-
-                // Set absorption time from AI recommendation
-                absorptionEditIsProgrammatic = true
-                absorptionTime = aiAbsorptionTimeInterval
-                absorptionTimeWasEdited = true
-
-                // Store metadata for logging
-                aiAssistedMetadata = AIAssistedCarbEntryMetadata(
-                    detailedDescription: response.detailedDescription,
-                    estimatedCarbs: response.estimatedCarbs,
-                    emoji: response.emoji,
-                    absorptionTime: response.absorptionTime,
-                    carbConfidence: response.carbConfidence,
-                    absorptionConfidence: response.absorptionConfidence,
-                    emojiConfidence: response.emojiConfidence,
-                    userModified: false
-                )
+                // Update form fields based on selected items
+                updateFormFromSelection()
 
                 isAnalyzingFood = false
             }
@@ -396,8 +380,70 @@ final class CarbEntryViewModel: ObservableObject {
         }
     }
 
+    /// Updates form fields based on current food item selection
+    func updateFormFromSelection() {
+        guard let selection = foodItemSelection else { return }
+
+        let totalCarbs = selection.selectedCarbs
+        let absorptionCategory = selection.selectedAbsorptionTime
+        let aiAbsorptionTimeInterval: TimeInterval = .hours(absorptionCategory.typicalHours)
+
+        // Store original AI values for comparison (total of all items)
+        if originalAICarbsQuantity == nil {
+            originalAICarbsQuantity = selection.response.totalCarbs
+            originalAIFoodType = selection.collapsedSummary
+            originalAIAbsorptionTime = aiAbsorptionTimeInterval
+        }
+
+        // Pre-fill the form fields
+        carbsQuantity = totalCarbs
+        foodType = selection.collapsedSummary
+        usesCustomFoodType = true
+
+        // Set absorption time from dominant category
+        absorptionEditIsProgrammatic = true
+        absorptionTime = aiAbsorptionTimeInterval
+        absorptionTimeWasEdited = true
+
+        // Build combined description for metadata
+        let itemDescriptions = selection.response.foodItems.map { item in
+            let emoji = item.emoji ?? ""
+            return "\(emoji) \(item.name): \(Int(item.carbs))g"
+        }.joined(separator: ", ")
+
+        // Store metadata for logging
+        aiAssistedMetadata = AIAssistedCarbEntryMetadata(
+            detailedDescription: itemDescriptions,
+            estimatedCarbs: selection.response.totalCarbs,
+            emoji: selection.mainItem?.emoji ?? "",
+            absorptionTime: absorptionCategory,
+            carbConfidence: selection.response.overallConfidence,
+            absorptionConfidence: selection.response.overallConfidence,
+            emojiConfidence: selection.response.overallConfidence,
+            userModified: selection.userModifiedSelection,
+            foodItems: selection.response.foodItems,
+            selectedItemIds: Array(selection.selectedItemIds)
+        )
+    }
+
+    /// Toggle selection of a food item and update form
+    func toggleFoodItem(_ itemId: UUID) {
+        guard foodItemSelection != nil else { return }
+        foodItemSelection?.toggleSelection(for: itemId)
+        updateFormFromSelection()
+    }
+
     /// Clears the AI error state
     func clearAIError() {
         aiError = nil
+    }
+
+    /// Clears the food item selection (resets AI analysis)
+    func clearFoodItemSelection() {
+        foodItemSelection = nil
+        originalAICarbsQuantity = nil
+        originalAIFoodType = nil
+        originalAIAbsorptionTime = nil
+        aiAssistedMetadata = nil
     }
 }

@@ -72,6 +72,7 @@
 		1DDE273E24AEA4B000796622 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE09BA824A3E23F009EE9F9 /* SettingsView.swift */; };
 		1DDE274024AEA4F200796622 /* NotificationsCriticalAlertPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA46B5F2492E2E300D71A63 /* NotificationsCriticalAlertPermissionsView.swift */; };
 		1DFE9E172447B6270082C280 /* UserNotificationAlertSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DFE9E162447B6270082C280 /* UserNotificationAlertSchedulerTests.swift */; };
+		39D96473C58EC25A705A5966 /* FoodItemsSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD4DD5205D5BA8F05F8870D /* FoodItemsSelectionView.swift */; };
 		3ED3198A2EB659E600820BCF /* GlucoseLiveActivityConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED319882EB659E600820BCF /* GlucoseLiveActivityConfiguration.swift */; };
 		3ED3198B2EB659E600820BCF /* ChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED319872EB659E600820BCF /* ChartView.swift */; };
 		3ED3198C2EB659E600820BCF /* BasalViewActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED319862EB659E600820BCF /* BasalViewActivity.swift */; };
@@ -250,6 +251,7 @@
 		4FF4D0F81E1725B000846527 /* NibLoadable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434F54561D287FDB002A9274 /* NibLoadable.swift */; };
 		4FF4D1001E18374700846527 /* WatchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF4D0FF1E18374700846527 /* WatchContext.swift */; };
 		4FF4D1011E18375000846527 /* WatchContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF4D0FF1E18374700846527 /* WatchContext.swift */; };
+		74AA255D738B18E636221A8A /* AIFoodItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72CC7117FB5DBAC58F005368 /* AIFoodItem.swift */; };
 		7D23667D21250C7E0028B67D /* LocalizedString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D23667C21250C7E0028B67D /* LocalizedString.swift */; };
 		7E69CFFC2A16A77E00203CBD /* ResetLoopManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E69CFFB2A16A77E00203CBD /* ResetLoopManager.swift */; };
 		84AA81D32A4A27A3000B658B /* LoopWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AA81D22A4A27A3000B658B /* LoopWidgets.swift */; };
@@ -1001,6 +1003,8 @@
 		4FDDD23620DC51DF00D04B16 /* LoopDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopDataManager.swift; sourceTree = "<group>"; };
 		4FF4D0FF1E18374700846527 /* WatchContext.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WatchContext.swift; sourceTree = "<group>"; };
 		4FFEDFBE20E5CF22000BFC58 /* ChartHUDController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChartHUDController.swift; sourceTree = "<group>"; };
+		5FD4DD5205D5BA8F05F8870D /* FoodItemsSelectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FoodItemsSelectionView.swift; sourceTree = "<group>"; };
+		72CC7117FB5DBAC58F005368 /* AIFoodItem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIFoodItem.swift; sourceTree = "<group>"; };
 		7D23667C21250C7E0028B67D /* LocalizedString.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LocalizedString.swift; path = LoopUI/Common/LocalizedString.swift; sourceTree = SOURCE_ROOT; };
 		7D9BEEE62335A6B3005DCFD6 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		7D9BEEE82335A6B9005DCFD6 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -1590,6 +1594,17 @@
 			path = Alerts;
 			sourceTree = "<group>";
 		};
+		2E86A627B057D131601320DE /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				A71E26C7FD82247A1E8DC1AA /* AIAssistedCarbEntryMetadata.swift */,
+				DAF8F3A53A33EE376A2D8839 /* OpenAIService.swift */,
+				72CC7117FB5DBAC58F005368 /* AIFoodItem.swift */,
+			);
+			name = AI;
+			path = AI;
+			sourceTree = "<group>";
+		};
 		3ED319892EB659E600820BCF /* Live Activity */ = {
 			isa = PBXGroup;
 			children = (
@@ -1609,16 +1624,6 @@
 				3ED3198F2EB65A2D00820BCF /* LiveActivityManager.swift */,
 			);
 			path = "Live Activity";
-			sourceTree = "<group>";
-		};
-		2E86A627B057D131601320DE /* AI */ = {
-			isa = PBXGroup;
-			children = (
-				A71E26C7FD82247A1E8DC1AA /* AIAssistedCarbEntryMetadata.swift */,
-				DAF8F3A53A33EE376A2D8839 /* OpenAIService.swift */,
-			);
-			name = AI;
-			path = AI;
 			sourceTree = "<group>";
 		};
 		4328E0121CFBE1B700E199AA /* Controllers */ = {
@@ -2015,6 +2020,7 @@
 				DD3DBD282A33AFE9000F8B5B /* IntegralRetrospectiveCorrectionSelectionView.swift */,
 				046CDC6D091DC7C6328CB5B6 /* PhotoPickerWrapper.swift */,
 				8CE36D7B3545F3155249AF64 /* AnimatedRainbowButton.swift */,
+				5FD4DD5205D5BA8F05F8870D /* FoodItemsSelectionView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -3610,6 +3616,8 @@
 				A5E973966472AD6A6DA9E1DA /* OpenAIService.swift in Sources */,
 				0697394F804DFAFC1A714056 /* PhotoPickerWrapper.swift in Sources */,
 				DD4335C8E24BABA0996ABF13 /* AnimatedRainbowButton.swift in Sources */,
+				39D96473C58EC25A705A5966 /* FoodItemsSelectionView.swift in Sources */,
+				74AA255D738B18E636221A8A /* AIFoodItem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
