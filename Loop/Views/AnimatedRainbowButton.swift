@@ -126,7 +126,7 @@ struct AnimatedRainbowButton: View {
         ) {
             rotation = 360
         }
-        /Users/gordon/src/loop/Loop/LoopWorkspace/Loop/Loop/Views/CarbEntryView.swift      withAnimation(
+        withAnimation(
             .easeInOut(duration: 0.8)
             .repeatForever(autoreverses: true)
         ) {

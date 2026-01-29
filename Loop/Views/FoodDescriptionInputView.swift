@@ -124,38 +124,6 @@ struct FoodDescriptionInputView: View {
     }
 }
 
-// MARK: - Action Button Style
-
-/// Button style for primary and secondary action buttons
-struct ActionButtonStyle: ButtonStyle {
-    enum Style {
-        case primary
-        case secondary
-    }
-
-    let style: Style
-
-    init(_ style: Style = .primary) {
-        self.style = style
-    }
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline)
-            .foregroundColor(style == .primary ? .white : .accentColor)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(style == .primary ? Color.accentColor : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(style == .secondary ? Color.accentColor : Color.clear, lineWidth: 1)
-            )
-            .opacity(configuration.isPressed ? 0.8 : 1.0)
-    }
-}
-
 #if DEBUG
 struct FoodDescriptionInputView_Previews: PreviewProvider {
     static var previews: some View {

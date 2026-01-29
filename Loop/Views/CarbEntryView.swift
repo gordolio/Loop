@@ -439,7 +439,6 @@ extension CarbEntryView {
     private var continueActionButton: some View {
         Button(action: viewModel.continueToBolus) {
             Text("Continue", comment: "Button label for continue")
-                .frame(maxWidth: .infinity)
         }
         .buttonStyle(ActionButtonStyle())
         .padding()
