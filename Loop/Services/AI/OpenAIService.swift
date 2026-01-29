@@ -272,10 +272,42 @@ struct OpenAIUsage: Decodable {
 struct AIFoodAnalysisResponse: Decodable {
     let foodItems: [AIFoodItemResponse]
     let overallConfidence: Double
+    let reasoning: String?
+}
+
+/// Response structure for multi-item food analysis with reasoning
+struct AIFoodAnalysisWithReasoningResponse: Decodable {
+    let foodItems: [AIFoodItemResponse]
+    let overallConfidence: Double
+    let reasoning: String
+}
+
+/// Response structure for single item update
+struct AISingleItemUpdateAPIResponse: Decodable {
+    let updatedCarbs: Double
+    let reasoning: String
+    let updatedAbsorptionTime: String?
+}
+
+/// Response structure for conversation turn
+struct AIConversationTurnAPIResponse: Decodable {
+    let foodItems: [AIFoodItemWithIdResponse]
+    let updatedItemIds: [String]
+    let assistantMessage: String
+    let overallConfidence: Double
 }
 
 /// Individual food item in the AI response
 struct AIFoodItemResponse: Decodable {
+    let name: String
+    let carbs: Double
+    let emoji: String
+    let absorptionTime: String
+}
+
+/// Individual food item in conversation response (includes ID)
+struct AIFoodItemWithIdResponse: Decodable {
+    let id: String
     let name: String
     let carbs: Double
     let emoji: String
@@ -621,6 +653,505 @@ final class OpenAIService {
         }
 
         return content.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    // MARK: - Enhanced Food Analysis with Reasoning
+
+    /// Analyzes a food image with optional user description and returns items with reasoning
+    /// - Parameters:
+    ///   - imageData: JPEG image data of the food to analyze
+    ///   - userDescription: Optional context from user (e.g., "No sugar added dessert")
+    /// - Returns: AIFoodItemsResponseWithReasoning containing items and explanation
+    func analyzeFood(imageData: Data, userDescription: String?) async throws -> AIFoodItemsResponseWithReasoning {
+        let apiKey = try getAPIKey()
+        let base64Image = imageData.base64EncodedString()
+
+        os_log("Sending food image for AI analysis with reasoning (%d bytes)", log: log, type: .info, imageData.count)
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        var prompt = """
+        Analyze this food image for a diabetes insulin dosing app. Identify ALL individual food items visible and estimate carbohydrate content for each.
+
+        ABSORPTION TIME CATEGORIES (assign to each item based on its composition):
+        - "fast" (30 min): Simple sugars, fruits, juices, candy, soft drinks, honey, ice cream
+        - "medium" (3 hours): Starches, bread, rice, pasta, mixed meals, vegetables, sandwiches, tacos
+        - "slow" (5 hours): High-fat/protein foods - pizza, burgers, cheese, bacon, nuts, steak, avocado
+        - "other" (3 hours): Alcoholic beverages, coffee, tea, or items where absorption is variable
+
+        IMPORTANT GUIDELINES:
+        - List EACH distinct food item separately (e.g., for a meal with sandwich, apple, and drink - list all 3)
+        - Include sides, drinks, sauces, and condiments as separate items
+        - For composite items like sandwiches, list as one item but note components in the name
+        - Estimate portion sizes based on visual cues
+        - Choose 1-2 emojis per item that best represent it
+        - Provide a brief reasoning explaining your carb estimates
+        """
+
+        // Add user description if provided
+        if let description = userDescription, !description.isEmpty {
+            prompt += "\n\nUSER CONTEXT: \(description)\nPlease factor this information into your analysis."
+        }
+
+        let chatRequest = OpenAIChatRequest(
+            model: "gpt-4o",
+            messages: [
+                OpenAIMessage(
+                    role: "user",
+                    content: [
+                        .text(prompt),
+                        .imageUrl(OpenAIImageUrl(url: "data:image/jpeg;base64,\(base64Image)"))
+                    ]
+                )
+            ],
+            maxTokens: 1500,
+            responseFormat: OpenAIResponseFormat(
+                type: "json_schema",
+                jsonSchema: OpenAIJSONSchema(
+                    name: "food_analysis_with_reasoning",
+                    strict: true,
+                    schema: buildFoodAnalysisWithReasoningSchema()
+                )
+            )
+        )
+
+        request.httpBody = try encoder.encode(chatRequest)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw OpenAIServiceError.invalidResponse(statusCode: 0)
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            os_log("OpenAI API error: status %d", log: log, type: .error, httpResponse.statusCode)
+            if let errorBody = String(data: data, encoding: .utf8) {
+                os_log("Error body: %{public}@", log: log, type: .error, errorBody)
+            }
+            throw OpenAIServiceError.invalidResponse(statusCode: httpResponse.statusCode)
+        }
+
+        return try parseMultiItemResponseWithReasoning(data)
+    }
+
+    /// Builds schema for food analysis with reasoning
+    private func buildFoodAnalysisWithReasoningSchema() -> JSONSchemaDefinition {
+        let foodItemSchema = JSONSchemaProperty.object(
+            properties: [
+                "name": .string(description: "Concise item description, max 30 chars"),
+                "carbs": .number(description: "Estimated carbohydrates in grams"),
+                "emoji": .string(description: "1-2 food emojis representing the item"),
+                "absorptionTime": .enum(
+                    values: AbsorptionTimeCategory.allCases.map { $0.rawValue },
+                    description: "Absorption speed category"
+                )
+            ],
+            required: ["name", "carbs", "emoji", "absorptionTime"],
+            description: "A single food item detected in the image"
+        )
+
+        return JSONSchemaDefinition(
+            type: "object",
+            properties: [
+                "foodItems": .array(items: foodItemSchema, description: "Array of all food items detected"),
+                "overallConfidence": .number(description: "Overall confidence in the analysis (0.0-1.0)"),
+                "reasoning": .string(description: "Brief explanation of how carb values were estimated, mentioning portion sizes and assumptions made")
+            ],
+            required: ["foodItems", "overallConfidence", "reasoning"],
+            additionalProperties: false
+        )
+    }
+
+    /// Parses the response with reasoning
+    private func parseMultiItemResponseWithReasoning(_ data: Data) throws -> AIFoodItemsResponseWithReasoning {
+        let chatResponse: OpenAIChatResponse
+        do {
+            chatResponse = try decoder.decode(OpenAIChatResponse.self, from: data)
+        } catch {
+            os_log("Failed to decode OpenAI response: %{public}@", log: log, type: .error, error.localizedDescription)
+            throw OpenAIServiceError.decodingError(error)
+        }
+
+        guard let content = chatResponse.choices.first?.message.content else {
+            throw OpenAIServiceError.noContentInResponse
+        }
+
+        os_log("Received AI response with reasoning: %{public}@", log: log, type: .debug, content)
+
+        guard let contentData = content.data(using: .utf8) else {
+            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid content encoding"]))
+        }
+
+        let analysisResponse: AIFoodAnalysisWithReasoningResponse
+        do {
+            analysisResponse = try decoder.decode(AIFoodAnalysisWithReasoningResponse.self, from: contentData)
+        } catch {
+            os_log("Failed to decode food analysis with reasoning: %{public}@", log: log, type: .error, error.localizedDescription)
+            throw OpenAIServiceError.decodingError(error)
+        }
+
+        let foodItems = analysisResponse.foodItems.map { item in
+            AIFoodItem(
+                name: item.name,
+                carbs: item.carbs,
+                emoji: item.emoji,
+                absorptionTime: AbsorptionTimeCategory(rawValue: item.absorptionTime) ?? .medium
+            )
+        }
+
+        guard !foodItems.isEmpty else {
+            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 2, userInfo: [NSLocalizedDescriptionKey: "No food items found in response"]))
+        }
+
+        os_log("AI detected %d food items with reasoning", log: log, type: .info, foodItems.count)
+
+        return AIFoodItemsResponseWithReasoning(
+            foodItems: foodItems,
+            overallConfidence: analysisResponse.overallConfidence,
+            reasoning: analysisResponse.reasoning
+        )
+    }
+
+    // MARK: - Single Item Update (Inline Editing)
+
+    /// Updates a single item's carb estimate based on new description
+    /// - Parameters:
+    ///   - imageData: Original image data
+    ///   - currentItems: All current food items
+    ///   - editedItemId: ID of the item being edited
+    ///   - newDescription: New description for the item
+    /// - Returns: Updated carb count and reasoning
+    func updateSingleItem(
+        imageData: Data,
+        currentItems: [AIFoodItem],
+        editedItemId: UUID,
+        newDescription: String
+    ) async throws -> AISingleItemUpdateResponse {
+        let apiKey = try getAPIKey()
+        let base64Image = imageData.base64EncodedString()
+
+        guard let editedItem = currentItems.first(where: { $0.id == editedItemId }) else {
+            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 3, userInfo: [NSLocalizedDescriptionKey: "Item not found"]))
+        }
+
+        os_log("Updating item '%{public}@' to '%{public}@'", log: log, type: .info, editedItem.name, newDescription)
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        // Build context of other items
+        let otherItemsContext = currentItems
+            .filter { $0.id != editedItemId }
+            .map { "\($0.emoji ?? "") \($0.name): \(Int($0.carbs))g" }
+            .joined(separator: ", ")
+
+        let prompt = """
+        I previously analyzed this food image and identified these items: \(otherItemsContext.isEmpty ? "none" : otherItemsContext)
+
+        I also identified an item as "\(editedItem.name)" with \(Int(editedItem.carbs))g carbs.
+
+        The user has corrected this item's description to: "\(newDescription)"
+
+        Please re-estimate the carbohydrates for this corrected item based on the image and new description.
+        Consider the visual portion size and the specific food type indicated by the user.
+
+        ABSORPTION TIME CATEGORIES:
+        - "fast": Simple sugars, fruits, juices
+        - "medium": Starches, bread, rice, pasta
+        - "slow": High-fat/protein foods
+        - "other": Variable absorption
+        """
+
+        let chatRequest = OpenAIChatRequest(
+            model: "gpt-4o",
+            messages: [
+                OpenAIMessage(
+                    role: "user",
+                    content: [
+                        .text(prompt),
+                        .imageUrl(OpenAIImageUrl(url: "data:image/jpeg;base64,\(base64Image)"))
+                    ]
+                )
+            ],
+            maxTokens: 500,
+            responseFormat: OpenAIResponseFormat(
+                type: "json_schema",
+                jsonSchema: OpenAIJSONSchema(
+                    name: "single_item_update",
+                    strict: true,
+                    schema: buildSingleItemUpdateSchema()
+                )
+            )
+        )
+
+        request.httpBody = try encoder.encode(chatRequest)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw OpenAIServiceError.invalidResponse(statusCode: 0)
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            os_log("OpenAI API error: status %d", log: log, type: .error, httpResponse.statusCode)
+            throw OpenAIServiceError.invalidResponse(statusCode: httpResponse.statusCode)
+        }
+
+        return try parseSingleItemUpdateResponse(data, itemId: editedItemId)
+    }
+
+    /// Builds schema for single item update
+    private func buildSingleItemUpdateSchema() -> JSONSchemaDefinition {
+        return JSONSchemaDefinition(
+            type: "object",
+            properties: [
+                "updatedCarbs": .number(description: "Updated carbohydrate estimate in grams"),
+                "reasoning": .string(description: "Brief explanation of the updated estimate"),
+                "updatedAbsorptionTime": .enum(
+                    values: AbsorptionTimeCategory.allCases.map { $0.rawValue },
+                    description: "Updated absorption time if it changed"
+                )
+            ],
+            required: ["updatedCarbs", "reasoning", "updatedAbsorptionTime"],
+            additionalProperties: false
+        )
+    }
+
+    /// Parses single item update response
+    private func parseSingleItemUpdateResponse(_ data: Data, itemId: UUID) throws -> AISingleItemUpdateResponse {
+        let chatResponse: OpenAIChatResponse
+        do {
+            chatResponse = try decoder.decode(OpenAIChatResponse.self, from: data)
+        } catch {
+            throw OpenAIServiceError.decodingError(error)
+        }
+
+        guard let content = chatResponse.choices.first?.message.content else {
+            throw OpenAIServiceError.noContentInResponse
+        }
+
+        guard let contentData = content.data(using: .utf8) else {
+            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid content encoding"]))
+        }
+
+        let apiResponse: AISingleItemUpdateAPIResponse
+        do {
+            apiResponse = try decoder.decode(AISingleItemUpdateAPIResponse.self, from: contentData)
+        } catch {
+            throw OpenAIServiceError.decodingError(error)
+        }
+
+        os_log("Item updated to %.1fg carbs", log: log, type: .info, apiResponse.updatedCarbs)
+
+        return AISingleItemUpdateResponse(
+            itemId: itemId,
+            updatedCarbs: apiResponse.updatedCarbs,
+            reasoning: apiResponse.reasoning,
+            updatedAbsorptionTime: apiResponse.updatedAbsorptionTime.flatMap { AbsorptionTimeCategory(rawValue: $0) }
+        )
+    }
+
+    // MARK: - Conversation Turn
+
+    /// Processes a conversation turn with the AI
+    /// - Parameters:
+    ///   - imageData: Original image data
+    ///   - currentItems: Current food items
+    ///   - conversationHistory: Previous messages in the conversation
+    ///   - userMessage: The user's new message
+    /// - Returns: Updated items and assistant response
+    func conversationTurn(
+        imageData: Data,
+        currentItems: [AIFoodItem],
+        conversationHistory: [AIConversationMessage],
+        userMessage: String
+    ) async throws -> AIConversationResponse {
+        let apiKey = try getAPIKey()
+        let base64Image = imageData.base64EncodedString()
+
+        os_log("Processing conversation turn: %{public}@", log: log, type: .info, userMessage)
+
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        // Build current items context
+        let itemsContext = currentItems.enumerated().map { (index, item) in
+            "[\(index + 1)] \(item.emoji ?? "") \(item.name): \(Int(item.carbs))g (\(item.absorptionTime.rawValue))"
+        }.joined(separator: "\n")
+
+        // Build conversation history (text only, skip carb summaries)
+        let historyText = conversationHistory.compactMap { msg -> String? in
+            switch msg.content {
+            case .text(let text):
+                return "\(msg.role.rawValue.capitalized): \(text)"
+            case .systemEvent(let event):
+                return "System: \(event)"
+            case .carbSummary:
+                return nil
+            }
+        }.joined(separator: "\n")
+
+        let systemPrompt = """
+        You are helping a person with diabetes refine their carbohydrate estimates for insulin dosing.
+
+        CURRENT FOOD ITEMS:
+        \(itemsContext)
+
+        CONVERSATION HISTORY:
+        \(historyText)
+
+        The user's new message is below. Based on their feedback:
+        1. Update any food items that need to change
+        2. Keep item IDs consistent (return the same IDs for unchanged items)
+        3. Provide a helpful response acknowledging their input
+        4. If they mention specific items, update those
+        5. If they provide new information about the whole meal, adjust accordingly
+
+        For each item, return:
+        - id: The original UUID if updating, or generate a new one for new items
+        - name: Food description (max 30 chars)
+        - carbs: Estimated grams
+        - emoji: 1-2 relevant emojis
+        - absorptionTime: fast/medium/slow/other
+
+        ABSORPTION TIME CATEGORIES:
+        - "fast": Simple sugars, fruits, juices
+        - "medium": Starches, bread, rice, pasta
+        - "slow": High-fat/protein foods
+        - "other": Variable absorption
+        """
+
+        // Build messages array for multi-turn conversation
+        var messages: [OpenAIMessage] = [
+            OpenAIMessage(
+                role: "system",
+                content: [.text(systemPrompt)]
+            ),
+            OpenAIMessage(
+                role: "user",
+                content: [
+                    .text("Here is the food image for reference:"),
+                    .imageUrl(OpenAIImageUrl(url: "data:image/jpeg;base64,\(base64Image)"))
+                ]
+            ),
+            OpenAIMessage(
+                role: "user",
+                content: [.text(userMessage)]
+            )
+        ]
+
+        let chatRequest = OpenAIChatRequest(
+            model: "gpt-4o",
+            messages: messages,
+            maxTokens: 1500,
+            responseFormat: OpenAIResponseFormat(
+                type: "json_schema",
+                jsonSchema: OpenAIJSONSchema(
+                    name: "conversation_response",
+                    strict: true,
+                    schema: buildConversationResponseSchema()
+                )
+            )
+        )
+
+        request.httpBody = try encoder.encode(chatRequest)
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw OpenAIServiceError.invalidResponse(statusCode: 0)
+        }
+
+        guard (200...299).contains(httpResponse.statusCode) else {
+            os_log("OpenAI API error: status %d", log: log, type: .error, httpResponse.statusCode)
+            throw OpenAIServiceError.invalidResponse(statusCode: httpResponse.statusCode)
+        }
+
+        return try parseConversationResponse(data, originalItems: currentItems)
+    }
+
+    /// Builds schema for conversation response
+    private func buildConversationResponseSchema() -> JSONSchemaDefinition {
+        let foodItemSchema = JSONSchemaProperty.object(
+            properties: [
+                "id": .string(description: "UUID of the item (same as original if updating, new UUID if adding)"),
+                "name": .string(description: "Concise item description, max 30 chars"),
+                "carbs": .number(description: "Estimated carbohydrates in grams"),
+                "emoji": .string(description: "1-2 food emojis representing the item"),
+                "absorptionTime": .enum(
+                    values: AbsorptionTimeCategory.allCases.map { $0.rawValue },
+                    description: "Absorption speed category"
+                )
+            ],
+            required: ["id", "name", "carbs", "emoji", "absorptionTime"],
+            description: "A food item"
+        )
+
+        return JSONSchemaDefinition(
+            type: "object",
+            properties: [
+                "foodItems": .array(items: foodItemSchema, description: "All food items (updated list)"),
+                "updatedItemIds": .array(items: .string(), description: "IDs of items that were changed in this turn"),
+                "assistantMessage": .string(description: "Helpful response to the user acknowledging their input"),
+                "overallConfidence": .number(description: "Overall confidence in the updated analysis (0.0-1.0)")
+            ],
+            required: ["foodItems", "updatedItemIds", "assistantMessage", "overallConfidence"],
+            additionalProperties: false
+        )
+    }
+
+    /// Parses conversation response
+    private func parseConversationResponse(_ data: Data, originalItems: [AIFoodItem]) throws -> AIConversationResponse {
+        let chatResponse: OpenAIChatResponse
+        do {
+            chatResponse = try decoder.decode(OpenAIChatResponse.self, from: data)
+        } catch {
+            throw OpenAIServiceError.decodingError(error)
+        }
+
+        guard let content = chatResponse.choices.first?.message.content else {
+            throw OpenAIServiceError.noContentInResponse
+        }
+
+        guard let contentData = content.data(using: .utf8) else {
+            throw OpenAIServiceError.decodingError(NSError(domain: "OpenAIService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid content encoding"]))
+        }
+
+        let apiResponse: AIConversationTurnAPIResponse
+        do {
+            apiResponse = try decoder.decode(AIConversationTurnAPIResponse.self, from: contentData)
+        } catch {
+            throw OpenAIServiceError.decodingError(error)
+        }
+
+        // Convert API response items to domain model
+        let foodItems = apiResponse.foodItems.map { item in
+            AIFoodItem(
+                id: UUID(uuidString: item.id) ?? UUID(),
+                name: item.name,
+                carbs: item.carbs,
+                emoji: item.emoji,
+                absorptionTime: AbsorptionTimeCategory(rawValue: item.absorptionTime) ?? .medium
+            )
+        }
+
+        let updatedItemIds = apiResponse.updatedItemIds.compactMap { UUID(uuidString: $0) }
+
+        os_log("Conversation turn: %d items, %d updated", log: log, type: .info, foodItems.count, updatedItemIds.count)
+
+        return AIConversationResponse(
+            foodItems: foodItems,
+            updatedItemIds: updatedItemIds,
+            assistantMessage: apiResponse.assistantMessage,
+            overallConfidence: apiResponse.overallConfidence
+        )
     }
 }
 

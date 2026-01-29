@@ -19,6 +19,7 @@ struct AnimatedRainbowButton: View {
 
     @State private var rotation: Double = 0
     @State private var isAnimating = false
+    @State private var introGlow: Double = 1.0
 
     // Rainbow colors for the animated gradient
     private let rainbowColors: [Color] = [
@@ -68,10 +69,10 @@ struct AnimatedRainbowButton: View {
                             center: .center,
                             angle: .degrees(rotation)
                         ),
-                        lineWidth: 4
+                        lineWidth: 4 + (introGlow * 4)
                     )
-                    .blur(radius: 6)
-                    .opacity(0.4)
+                    .blur(radius: 6 + (introGlow * 6))
+                    .opacity(0.4 + (introGlow * 0.4))
 
                 // Clear background with slight tint
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -88,9 +89,9 @@ struct AnimatedRainbowButton: View {
                     }
 
                     Text(title)
-                        .fontWeight(.semibold)
+                        .bold()
                 }
-                .foregroundColor(.primary)
+                .foregroundColor(introGlow > 0.01 ? Color(hue: 0.70, saturation: 0.6 * introGlow, brightness: 0.5 + (0.3 * introGlow)) : .primary)
                 .padding(.vertical, 12)
                 .padding(.horizontal, 16)
             }
@@ -101,6 +102,12 @@ struct AnimatedRainbowButton: View {
         .opacity(isLoading ? 0.7 : 1.0)
         .onAppear {
             startAnimation()
+            // Fade intro glow to normal after 2 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeOut(duration: 2.0)) {
+                    introGlow = 0
+                }
+            }
         }
     }
 

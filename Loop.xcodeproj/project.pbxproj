@@ -72,6 +72,7 @@
 		1DDE273E24AEA4B000796622 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE09BA824A3E23F009EE9F9 /* SettingsView.swift */; };
 		1DDE274024AEA4F200796622 /* NotificationsCriticalAlertPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA46B5F2492E2E300D71A63 /* NotificationsCriticalAlertPermissionsView.swift */; };
 		1DFE9E172447B6270082C280 /* UserNotificationAlertSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DFE9E162447B6270082C280 /* UserNotificationAlertSchedulerTests.swift */; };
+		20CA86887525F0CD814DABF3 /* ShimmerModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AB0BA69F01DB2EE32034CDC /* ShimmerModifier.swift */; };
 		39D96473C58EC25A705A5966 /* FoodItemsSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD4DD5205D5BA8F05F8870D /* FoodItemsSelectionView.swift */; };
 		3ED3198A2EB659E600820BCF /* GlucoseLiveActivityConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED319882EB659E600820BCF /* GlucoseLiveActivityConfiguration.swift */; };
 		3ED3198B2EB659E600820BCF /* ChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED319872EB659E600820BCF /* ChartView.swift */; };
@@ -88,6 +89,7 @@
 		3ED3199F2EB65AFE00820BCF /* LocalizedString.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED3199E2EB65AFE00820BCF /* LocalizedString.swift */; };
 		3ED319A12EB65B4100820BCF /* Bootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED319A02EB65B4100820BCF /* Bootstrap.swift */; };
 		3ED319A32EB65DA800820BCF /* LiveActivityManagerProxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED319A22EB65DA300820BCF /* LiveActivityManagerProxy.swift */; };
+		401A959AF911B7570F6E841C /* ChatMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 348736137947DC07A267BA4B /* ChatMessageView.swift */; };
 		43027F0F1DFE0EC900C51989 /* HKUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F526D5E1DF2459000A04910 /* HKUnit.swift */; };
 		4302F4E11D4E9C8900F0FCAF /* TextFieldTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4302F4E01D4E9C8900F0FCAF /* TextFieldTableViewController.swift */; };
 		4302F4E31D4EA54200F0FCAF /* InsulinDeliveryTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4302F4E21D4EA54200F0FCAF /* InsulinDeliveryTableViewController.swift */; };
@@ -323,6 +325,8 @@
 		89F9119424358E4500ECCAF3 /* CarbAbsorptionTime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89F9119324358E4500ECCAF3 /* CarbAbsorptionTime.swift */; };
 		89F9119624358E6900ECCAF3 /* BolusPickerValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89F9119524358E6900ECCAF3 /* BolusPickerValues.swift */; };
 		89FE21AD24AC57E30033F501 /* Collection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89FE21AC24AC57E30033F501 /* Collection.swift */; };
+		980CBAEE98BD3C230B3F3300 /* ChatCarbSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179882CD679BA3B75777EBC6 /* ChatCarbSummaryView.swift */; };
+		A1DC19E25D2653709D04D027 /* ChatMessageBubbles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28AEB898EEF8C7472D99A524 /* ChatMessageBubbles.swift */; };
 		A5E973966472AD6A6DA9E1DA /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAF8F3A53A33EE376A2D8839 /* OpenAIService.swift */; };
 		A90EF53C25DEF06200F32D61 /* PluginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16DA84122E8E112008624C2 /* PluginManager.swift */; };
 		A90EF54425DEF0A000F32D61 /* OSLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4374B5EE209D84BE00D17AA8 /* OSLog.swift */; };
@@ -381,6 +385,7 @@
 		B405E35A24D2B1A400DD058D /* HUDAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F2C15961E09E94E00E160D4 /* HUDAssets.xcassets */; };
 		B405E35B24D2E05600DD058D /* HUDAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F2C15961E09E94E00E160D4 /* HUDAssets.xcassets */; };
 		B40D07C7251A89D500C1C6D7 /* GlucoseDisplay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40D07C6251A89D500C1C6D7 /* GlucoseDisplay.swift */; };
+		B40F13F6899F0CB1082DBD48 /* AIConversationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845FD42FB5EAA46EAD9E1380 /* AIConversationManager.swift */; };
 		B42C951424A3C76000857C73 /* CGMStatusHUDViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42C951324A3C76000857C73 /* CGMStatusHUDViewModel.swift */; };
 		B42D124328D371C400E43D22 /* AlertMuter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42D124228D371C400E43D22 /* AlertMuter.swift */; };
 		B43CF07E29434EC4008A520B /* HowMuteAlertWorkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B43CF07D29434EC4008A520B /* HowMuteAlertWorkView.swift */; };
@@ -427,6 +432,7 @@
 		B66D1F3C2E6A5D6600471149 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B66D1F3A2E6A5D6600471149 /* Localizable.xcstrings */; };
 		B66D1F3E2E6A5D6600471149 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B66D1F3D2E6A5D6600471149 /* Localizable.xcstrings */; };
 		B66D1F402E6A5D6600471149 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = B66D1F3F2E6A5D6600471149 /* InfoPlist.xcstrings */; };
+		BE53DD7D63353F002C49FFD7 /* FoodDescriptionInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 813171864E49CCDB84E39133 /* FoodDescriptionInputView.swift */; };
 		C110888D2A3913C600BA4898 /* BuildDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = C110888C2A3913C600BA4898 /* BuildDetails.swift */; };
 		C11B9D5B286778A800500CF8 /* SwiftCharts in Frameworks */ = {isa = PBXBuildFile; productRef = C11B9D5A286778A800500CF8 /* SwiftCharts */; };
 		C11B9D5E286778D000500CF8 /* LoopKitUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C11B9D5D286778D000500CF8 /* LoopKitUI.framework */; };
@@ -508,6 +514,7 @@
 		C1FB428D21791D2500FAB378 /* PumpManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43C3B6F620BBCAA30026CAFA /* PumpManager.swift */; };
 		C1FB428F217921D600FAB378 /* PumpManagerUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FB428E217921D600FAB378 /* PumpManagerUI.swift */; };
 		C1FB4290217922A100FAB378 /* PumpManagerUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1FB428E217921D600FAB378 /* PumpManagerUI.swift */; };
+		D16D9DCAE268CEFF2A62D391 /* AIConversationMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 623BDCFB3952BA603665F7EE /* AIConversationMessage.swift */; };
 		DD3DBD292A33AFE9000F8B5B /* IntegralRetrospectiveCorrectionSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD3DBD282A33AFE9000F8B5B /* IntegralRetrospectiveCorrectionSelectionView.swift */; };
 		DD4335C8E24BABA0996ABF13 /* AnimatedRainbowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CE36D7B3545F3155249AF64 /* AnimatedRainbowButton.swift */; };
 		DDC389F62A2B61750066E2E8 /* ApplicationFactorStrategy.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDC389F52A2B61750066E2E8 /* ApplicationFactorStrategy.swift */; };
@@ -594,6 +601,7 @@
 		E9C58A7E24DB529A00487A17 /* dynamic_glucose_effect_partially_observed.json in Resources */ = {isa = PBXBuildFile; fileRef = E9C58A7924DB529A00487A17 /* dynamic_glucose_effect_partially_observed.json */; };
 		E9C58A7F24DB529A00487A17 /* counteraction_effect_falling_glucose.json in Resources */ = {isa = PBXBuildFile; fileRef = E9C58A7A24DB529A00487A17 /* counteraction_effect_falling_glucose.json */; };
 		E9C58A8024DB529A00487A17 /* insulin_effect.json in Resources */ = {isa = PBXBuildFile; fileRef = E9C58A7B24DB529A00487A17 /* insulin_effect.json */; };
+		F0FA18EA0880D46C78693E74 /* AIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF2AECABAACBFD4B68D50304 /* AIChatView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -786,6 +794,7 @@
 		14B1737028AEDBF6006CCD7C /* GlucoseView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlucoseView.swift; sourceTree = "<group>"; };
 		14B1737128AEDBF6006CCD7C /* LoopCircleView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoopCircleView.swift; sourceTree = "<group>"; };
 		14D906F32A846510006EB79A /* FavoriteFoodsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteFoodsViewModel.swift; sourceTree = "<group>"; };
+		179882CD679BA3B75777EBC6 /* ChatCarbSummaryView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatCarbSummaryView.swift; sourceTree = "<group>"; };
 		1D05219A2469E9DF000EBBDE /* StoredAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoredAlert.swift; sourceTree = "<group>"; };
 		1D05219C2469F1F5000EBBDE /* AlertStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertStore.swift; sourceTree = "<group>"; };
 		1D080CBC2473214A00356610 /* AlertStore.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = AlertStore.xcdatamodel; sourceTree = "<group>"; };
@@ -812,6 +821,9 @@
 		1DC63E7325351BDF004605DA /* TrueTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TrueTime.framework; path = Carthage/Build/iOS/TrueTime.framework; sourceTree = "<group>"; };
 		1DE09BA824A3E23F009EE9F9 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		1DFE9E162447B6270082C280 /* UserNotificationAlertSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserNotificationAlertSchedulerTests.swift; sourceTree = "<group>"; };
+		28AEB898EEF8C7472D99A524 /* ChatMessageBubbles.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatMessageBubbles.swift; sourceTree = "<group>"; };
+		348736137947DC07A267BA4B /* ChatMessageView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatMessageView.swift; sourceTree = "<group>"; };
+		3AB0BA69F01DB2EE32034CDC /* ShimmerModifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShimmerModifier.swift; sourceTree = "<group>"; };
 		3D03C6DA2AACE6AC00FDE5D2 /* hi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hi; path = hi.lproj/Intents.strings; sourceTree = "<group>"; };
 		3ED319862EB659E600820BCF /* BasalViewActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasalViewActivity.swift; sourceTree = "<group>"; };
 		3ED319872EB659E600820BCF /* ChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartView.swift; sourceTree = "<group>"; };
@@ -1004,6 +1016,7 @@
 		4FF4D0FF1E18374700846527 /* WatchContext.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WatchContext.swift; sourceTree = "<group>"; };
 		4FFEDFBE20E5CF22000BFC58 /* ChartHUDController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChartHUDController.swift; sourceTree = "<group>"; };
 		5FD4DD5205D5BA8F05F8870D /* FoodItemsSelectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FoodItemsSelectionView.swift; sourceTree = "<group>"; };
+		623BDCFB3952BA603665F7EE /* AIConversationMessage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIConversationMessage.swift; sourceTree = "<group>"; };
 		72CC7117FB5DBAC58F005368 /* AIFoodItem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIFoodItem.swift; sourceTree = "<group>"; };
 		7D23667C21250C7E0028B67D /* LocalizedString.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = LocalizedString.swift; path = LoopUI/Common/LocalizedString.swift; sourceTree = SOURCE_ROOT; };
 		7D9BEEE62335A6B3005DCFD6 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -1066,6 +1079,8 @@
 		7D9BF14623370E8D005DCFD6 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/Localizable.strings; sourceTree = "<group>"; };
 		7E69CFFB2A16A77E00203CBD /* ResetLoopManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResetLoopManager.swift; sourceTree = "<group>"; };
 		80F864E52433BF5D0026EC26 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		813171864E49CCDB84E39133 /* FoodDescriptionInputView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FoodDescriptionInputView.swift; sourceTree = "<group>"; };
+		845FD42FB5EAA46EAD9E1380 /* AIConversationManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIConversationManager.swift; sourceTree = "<group>"; };
 		84AA81D22A4A27A3000B658B /* LoopWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoopWidgets.swift; sourceTree = "<group>"; };
 		84AA81D52A4A28AF000B658B /* WidgetBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBackground.swift; sourceTree = "<group>"; };
 		84AA81D72A4A2910000B658B /* StatusWidgetTimelimeEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusWidgetTimelimeEntry.swift; sourceTree = "<group>"; };
@@ -1421,6 +1436,7 @@
 		F5E0BDD827E1D71E0033557E /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/Main.strings; sourceTree = "<group>"; };
 		F5E0BDDA27E1D71F0033557E /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/Localizable.strings; sourceTree = "<group>"; };
 		F5E0BDE327E1D7230033557E /* he */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = he; path = he.lproj/Localizable.strings; sourceTree = "<group>"; };
+		FF2AECABAACBFD4B68D50304 /* AIChatView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIChatView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1600,6 +1616,8 @@
 				A71E26C7FD82247A1E8DC1AA /* AIAssistedCarbEntryMetadata.swift */,
 				DAF8F3A53A33EE376A2D8839 /* OpenAIService.swift */,
 				72CC7117FB5DBAC58F005368 /* AIFoodItem.swift */,
+				623BDCFB3952BA603665F7EE /* AIConversationMessage.swift */,
+				845FD42FB5EAA46EAD9E1380 /* AIConversationManager.swift */,
 			);
 			name = AI;
 			path = AI;
@@ -2021,6 +2039,12 @@
 				046CDC6D091DC7C6328CB5B6 /* PhotoPickerWrapper.swift */,
 				8CE36D7B3545F3155249AF64 /* AnimatedRainbowButton.swift */,
 				5FD4DD5205D5BA8F05F8870D /* FoodItemsSelectionView.swift */,
+				813171864E49CCDB84E39133 /* FoodDescriptionInputView.swift */,
+				3AB0BA69F01DB2EE32034CDC /* ShimmerModifier.swift */,
+				28AEB898EEF8C7472D99A524 /* ChatMessageBubbles.swift */,
+				179882CD679BA3B75777EBC6 /* ChatCarbSummaryView.swift */,
+				348736137947DC07A267BA4B /* ChatMessageView.swift */,
+				FF2AECABAACBFD4B68D50304 /* AIChatView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -3618,6 +3642,14 @@
 				DD4335C8E24BABA0996ABF13 /* AnimatedRainbowButton.swift in Sources */,
 				39D96473C58EC25A705A5966 /* FoodItemsSelectionView.swift in Sources */,
 				74AA255D738B18E636221A8A /* AIFoodItem.swift in Sources */,
+				BE53DD7D63353F002C49FFD7 /* FoodDescriptionInputView.swift in Sources */,
+				20CA86887525F0CD814DABF3 /* ShimmerModifier.swift in Sources */,
+				A1DC19E25D2653709D04D027 /* ChatMessageBubbles.swift in Sources */,
+				980CBAEE98BD3C230B3F3300 /* ChatCarbSummaryView.swift in Sources */,
+				401A959AF911B7570F6E841C /* ChatMessageView.swift in Sources */,
+				F0FA18EA0880D46C78693E74 /* AIChatView.swift in Sources */,
+				D16D9DCAE268CEFF2A62D391 /* AIConversationMessage.swift in Sources */,
+				B40F13F6899F0CB1082DBD48 /* AIConversationManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

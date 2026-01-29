@@ -141,14 +141,18 @@ struct FoodItemSelection: Equatable {
             return NSLocalizedString("No items selected", comment: "Text shown when no food items are selected")
         }
 
-        let displayName = main.emoji.map { "\($0) \(main.name)" } ?? main.name
+        let emoji = main.emoji ?? ""
+        let name = main.name
 
         if selectedCount == 1 {
-            return displayName
+            return "\(emoji) \(name)"
         } else {
             let othersCount = selectedCount - 1
-            let format = NSLocalizedString("%@ + %d other(s)", comment: "Summary showing main food item and count of others (1: main item name, 2: count of other items)")
-            return String(format: format, displayName, othersCount)
+            // Truncate the name if needed to fit within display limits
+            let maxNameLength = 12
+            let truncatedName = name.count > maxNameLength ? String(name.prefix(maxNameLength)) + "…" : name
+            let format = NSLocalizedString("%@%@ +%d", comment: "Summary showing main food item and count of others (1: emoji, 2: item name, 3: count of other items)")
+            return String(format: format, emoji, truncatedName, othersCount)
         }
     }
 
@@ -170,4 +174,58 @@ struct FoodItemSelection: Equatable {
     var userModifiedSelection: Bool {
         selectedItemIds.count != response.foodItems.count
     }
+}
+
+// MARK: - Extended Response Types for Conversation
+
+/// Response from OpenAI for initial food analysis (includes reasoning)
+struct AIFoodItemsResponseWithReasoning: Codable, Equatable {
+    /// Array of food items detected in the image
+    let foodItems: [AIFoodItem]
+
+    /// Overall confidence in the analysis (0.0-1.0)
+    let overallConfidence: Double
+
+    /// Reasoning explaining why these carb values were assigned
+    let reasoning: String
+
+    /// Total carbs across all items
+    var totalCarbs: Double {
+        foodItems.reduce(0) { $0 + $1.carbs }
+    }
+
+    /// Convert to basic response (without reasoning)
+    var asBasicResponse: AIFoodItemsResponse {
+        AIFoodItemsResponse(foodItems: foodItems, overallConfidence: overallConfidence)
+    }
+}
+
+/// Response from OpenAI for a single item update (inline editing)
+struct AISingleItemUpdateResponse: Codable, Equatable {
+    /// The updated item ID
+    let itemId: UUID
+
+    /// The new carb count for this item
+    let updatedCarbs: Double
+
+    /// Brief reasoning for the update
+    let reasoning: String
+
+    /// Optional: new absorption time if it changed
+    let updatedAbsorptionTime: AbsorptionTimeCategory?
+}
+
+/// Response from OpenAI for a conversation turn
+struct AIConversationResponse: Codable, Equatable {
+    /// All food items (full list, potentially with updates)
+    let foodItems: [AIFoodItem]
+
+    /// IDs of items that were updated in this turn
+    let updatedItemIds: [UUID]
+
+    /// Message to display in chat
+    let assistantMessage: String
+
+    /// Overall confidence in the updated analysis
+    let overallConfidence: Double
 }

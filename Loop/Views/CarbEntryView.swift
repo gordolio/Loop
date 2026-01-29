@@ -28,6 +28,7 @@ struct CarbEntryView: View, HorizontalSizeClassOverride {
     @State private var photoSourceType: PhotoSourceType = .photoLibrary
     @State private var selectedImage: UIImage?
     @State private var isFoodItemsExpanded = false
+    @State private var showAIChat = false
 
     private let isNewEntry: Bool
 
@@ -126,10 +127,22 @@ struct CarbEntryView: View, HorizontalSizeClassOverride {
         .onChange(of: selectedImage) { newImage in
             if let image = newImage,
                let imageData = image.compressedForAI() {
-                Task {
-                    await viewModel.analyzeFood(imageData: imageData)
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    viewModel.capturedImageData = imageData
+                    viewModel.foodDescription = ""
                 }
                 selectedImage = nil
+            }
+        }
+        .fullScreenCover(isPresented: $showAIChat) {
+            if let manager = viewModel.conversationManager {
+                AIChatView(
+                    conversationManager: manager,
+                    isPresented: $showAIChat,
+                    onAcceptValues: { selection in
+                        viewModel.acceptConversationValues(selection)
+                    }
+                )
             }
         }
         .alert(
@@ -153,23 +166,70 @@ struct CarbEntryView: View, HorizontalSizeClassOverride {
         VStack(spacing: 10) {
             // AI-assisted carb entry button (experimental feature)
             if isNewEntry && FeatureFlags.allowExperimentalFeatures {
-                aiAnalysisButton
-                    .padding(.bottom, 4)
+                // Hide the AI button once we're in AI mode
+                if !viewModel.isInAIMode {
+                    aiAnalysisButton
+                        .padding(.bottom, 4)
+                        .transition(.opacity)
+                }
+
+                // Inline description input (shown after photo capture, hidden once results arrive)
+                if let imageData = viewModel.capturedImageData, viewModel.foodItemSelection == nil {
+                    ZStack {
+                        FoodDescriptionInputView(
+                            description: $viewModel.foodDescription,
+                            imageData: imageData,
+                            onAnalyze: {
+                                Task {
+                                    await viewModel.analyzeFood(
+                                        imageData: imageData,
+                                        description: viewModel.foodDescription.isEmpty ? nil : viewModel.foodDescription
+                                    )
+                                }
+                            },
+                            onCancel: {
+                                withAnimation(.easeInOut(duration: 0.35)) {
+                                    viewModel.capturedImageData = nil
+                                    viewModel.foodDescription = ""
+                                }
+                            }
+                        )
+                        .disabled(viewModel.isAnalyzingFood)
+                        .opacity(viewModel.isAnalyzingFood ? 0.4 : 1.0)
+
+                        // AI analyzing overlay
+                        if viewModel.isAnalyzingFood {
+                            analysisOverlay
+                        }
+                    }
+                    .transition(.opacity)
+                }
 
                 // Food items selection (shown after AI analysis)
                 if viewModel.foodItemSelection != nil {
-                    CardSectionDivider()
-
                     FoodItemsSelectionView(
                         selection: $viewModel.foodItemSelection,
                         isExpanded: $isFoodItemsExpanded,
+                        pendingItemIds: viewModel.pendingItemIds,
                         onToggleItem: { itemId in
                             viewModel.toggleFoodItem(itemId)
+                        },
+                        onEditItem: { itemId, newDescription in
+                            Task {
+                                await viewModel.editFoodItemDescription(itemId, newDescription: newDescription)
+                            }
+                        },
+                        onOpenChat: {
+                            showAIChat = true
                         }
                     )
+                    .transition(.opacity)
                 }
 
-                CardSectionDivider()
+                // Only show divider when AI content (description input or results) is visible
+                if viewModel.isInAIMode {
+                    CardSectionDivider()
+                }
             }
 
             let amountConsumedFocused: Binding<Bool> = Binding(get: { expandedRow == .amountConsumed }, set: { expandedRow = $0 ? .amountConsumed : nil })
@@ -379,6 +439,7 @@ extension CarbEntryView {
     private var continueActionButton: some View {
         Button(action: viewModel.continueToBolus) {
             Text("Continue", comment: "Button label for continue")
+                .frame(maxWidth: .infinity)
         }
         .buttonStyle(ActionButtonStyle())
         .padding()
@@ -391,6 +452,28 @@ extension CarbEntryView {
             icon: "sparkles",
             isLoading: viewModel.isAnalyzingFood,
             action: { showPhotoSourcePicker = true }
+        )
+    }
+
+    private var analysisOverlay: some View {
+        VStack(spacing: 8) {
+            AnimatedSparkleIcon(isAnimating: true)
+                .scaleEffect(1.5)
+
+            Text("Analyzing…", comment: "Label shown while AI is analyzing food photo")
+                .font(.caption.bold())
+                .foregroundColor(Color(hue: 0.75, saturation: 0.6, brightness: 0.8))
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground).opacity(0.85))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.clear)
+                .totalShimmer(isAnimating: true)
         )
     }
 }

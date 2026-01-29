@@ -587,6 +587,9 @@
         }
       }
     },
+    "(%lld items)" : {
+      "comment" : "Item count in compact view"
+    },
     "%@ %@" : {
       "comment" : "The format for an active custom preset. (1: preset symbol)(2: preset name)",
       "localizations" : {
@@ -714,17 +717,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ %2$@"
-          }
-        }
-      }
-    },
-    "%@ + %d other(s)" : {
-      "comment" : "Summary showing main food item and count of others (1: main item name, 2: count of other items)",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ + %2$d other(s)"
           }
         }
       }
@@ -1202,6 +1194,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@."
+          }
+        }
+      }
+    },
+    "%@%@ +%d" : {
+      "comment" : "Summary showing main food item and count of others (1: emoji, 2: item name, 3: count of other items)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@ +%3$d"
           }
         }
       }
@@ -3147,6 +3150,9 @@
         }
       }
     },
+    "%lld items" : {
+      "comment" : "Multiple item count"
+    },
     "⚠️" : {
       "localizations" : {
         "da" : {
@@ -3204,6 +3210,9 @@
           }
         }
       }
+    },
+    "1 item" : {
+      "comment" : "Single item count"
     },
     "15 min glucose regression coefficient (b₁), continued with decay over 30 min" : {
       "comment" : "Description of the prediction input effect for glucose momentum",
@@ -4251,6 +4260,9 @@
           }
         }
       }
+    },
+    "Accept These Values" : {
+      "comment" : "Button to accept AI carb estimates"
     },
     "AcceptRecommendedBolus" : {
       "comment" : "Action to copy the recommended Bolus value to the actual Bolus Field",
@@ -5332,6 +5344,9 @@
         }
       }
     },
+    "Add context (optional)" : {
+      "comment" : "Label for food description text field"
+    },
     "Add item to bottom row" : {
       "comment" : "Title for Add item"
     },
@@ -5767,6 +5782,9 @@
     },
     "AI Analysis Error" : {
       "comment" : "Title for AI analysis error alert"
+    },
+    "AI Estimate" : {
+      "comment" : "Label for AI-generated carb estimate"
     },
     "Alert Management" : {
       "comment" : "Alert Permissions button text\nTitle of alert management screen",
@@ -6966,8 +6984,14 @@
         }
       }
     },
+    "Analyze" : {
+      "comment" : "Button to analyze food with AI"
+    },
     "Analyze Food with AI" : {
       "comment" : "Button label for AI-assisted food analysis"
+    },
+    "Analyzing…" : {
+      "comment" : "Label shown while AI is analyzing food photo"
     },
     "API Key" : {
       "comment" : "The title of the amplitude API key credential",
@@ -9864,7 +9888,7 @@
       "comment" : "Button to select camera as photo source"
     },
     "Cancel" : {
-      "comment" : "Button label for cancel\nButton text to cancel\nCancel button for reset loop alert\nCancel export button title\nThe title of the cancel action in an action sheet",
+      "comment" : "Button label for cancel\nButton text to cancel\nCancel button\nCancel button for reset loop alert\nCancel description input\nCancel export button title\nThe title of the cancel action in an action sheet",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -13127,6 +13151,9 @@
           }
         }
       }
+    },
+    "Confirm" : {
+      "comment" : "Confirm button"
     },
     "Continue" : {
       "comment" : "Button label for continue\nDefault alert dismissal",
@@ -16497,6 +16524,9 @@
         }
       }
     },
+    "e.g., sugar-free, homemade…" : {
+      "comment" : "Placeholder for food description"
+    },
     "Enable\nBluetooth" : {
       "comment" : "Message to the user to enable bluetooth",
       "localizations" : {
@@ -17295,6 +17325,9 @@
           }
         }
       }
+    },
+    "Error" : {
+      "comment" : "Error alert title"
     },
     "Error Canceling Bolus" : {
       "comment" : "The alert title for an error while canceling a bolus",
@@ -20351,6 +20384,9 @@
           }
         }
       }
+    },
+    "Hide items" : {
+
     },
     "High Glucose" : {
       "localizations" : {
@@ -32099,6 +32135,12 @@
         }
       }
     },
+    "Refine Food Analysis" : {
+      "comment" : "Title for AI chat view"
+    },
+    "Refine with AI" : {
+      "comment" : "Button to open AI chat for refining food analysis"
+    },
     "Remote Bolus Entry: %@ U" : {
       "comment" : "The notification title for a remote bolus. (1: Bolus amount)\nThe notification title for a remote failure. (1: Bolus amount)",
       "localizations" : {
@@ -33410,6 +33452,9 @@
           }
         }
       }
+    },
+    "Show items" : {
+
     },
     "Shows last loop error" : {
       "comment" : "Loop Completion HUD accessibility hint",
@@ -36953,6 +36998,9 @@
           }
         }
       }
+    },
+    "Type a message..." : {
+      "comment" : "Placeholder for chat input"
     },
     "U" : {
       "comment" : "The short unit display string for international units of insulin",
